@@ -40,7 +40,7 @@ END TABLE
 - **`STUBS`** sets the **rows** of the table — here, the categories of `$q1`.
 - **`STATS`** chooses which numbers appear: `n` (count) and `col_pct` (column %).
 
-Run it with `mrscript run tutorial.mrs`:
+Run it — click **Run ▶** in Tablix (or, from the command line, `mrscript run tutorial.mrs`):
 
 ```text
 Table 1
