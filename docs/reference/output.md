@@ -1,0 +1,146 @@
+# Part 6 · Output
+
+## 20. EXPORT DATA (write the transformed dataset back out) {#export-data}
+
+```mrs
+EXPORT DATA "out.file" [AS fmt] [SOURCE_ONLY] [CODEBOOK "book.json"]
+```
+
+Writes the current (transformed) dataset to disk — closing the load → clean →
+reproduce loop. It runs **in script order**, so it captures the data state at that
+point (place it after your transforms).
+
+| Clause | Meaning |
+|--------|---------|
+| `AS fmt` | Detected from the extension, or forced: `sav` (SPSS, metadata-complete — labels, value labels, missing as ranges, measure), `csv` (plain data), `parquet` (plain data). |
+| `SOURCE_ONLY` | Write only the original source columns; drop derived `@columns` (`DERIVE` / `COMPUTE` / `RECODE`-`EDIT … INTO`). |
+| `CODEBOOK "f"` | Also write a JSON codebook ([§5 format](data-input.md#source)). Pair with `csv`/`parquet`, which carry no embedded metadata. |
+
+!!! warning "Multi-response derived columns"
+
+    A multi-response `DERIVE` column is stored as a list of codes, which `.sav` and
+    `.csv` cannot hold — exporting one to those formats is **refused** (write-back as
+    0/1 `Varname_[STUB]` dichotomy columns is planned, not yet built). Use
+    `SOURCE_ONLY` to drop derived columns, or export to `.parquet` (lists are native
+    there).
+
+```mrs
+EXPORT DATA 'clean.sav'                              // full, metadata-complete
+EXPORT DATA 'clean.csv' CODEBOOK 'book.json'         // data + sidecar metadata
+EXPORT DATA 'original_only.sav' SOURCE_ONLY          // drop derived columns
+```
+
+See also the `mrscript export-data` CLI command ([§21](#cli)), which does the same
+from the command line.
+
+---
+
+## 21. Output formats and the CLI {#cli}
+
+Three output formats are available: **plain text** (to stdout), **tagged CSV**, and
+**styled Excel**. The CLI `export` command selects format by output-file extension
+(`.csv` is the default; `.xlsx` triggers the Excel renderer).
+
+### Plain text (`mrscript run`)
+
+Quantum/MRDCL-style fixed-width tables, written to stdout.
+
+```text
+Table N                         sequence number assigned per run
+<title>                         from TABLE '...' (or the first stub's label)
+Base: <text>                    from the enclosing SCOPE LABEL; else "All respondents"
+
+                      GENDER             AGE          ← banner group bands,
+                  --------------   ---------------       one per banner segment,
+           Total    Male  Female    6-8 YO  9-10 YO     each underlined; columns
+                                                        in different segments are
+Total         105      52      53      73       32      gap-separated
+              ----   ----- -------   ------ --------
+  <stub>       52      52       0      36       16    ← count line
+              50%    100%      0%     49%      50%    ← percentage line
+```
+
+- **Blank vs zero:** a measured zero (the cell has a base) prints `0` / `0%`; a cell
+  whose column has no base, and any undefined summary stat, print blank;
+  `MIN_BASE` / `CONFIDENTIAL` suppression prints its mask (`<<` / `**`).
+- Counts and percentages print at **0 decimals** by default, means at **2** — change
+  with `DECIMALS` or the per-aspect `PCT_DECIMALS` / `COUNT_DECIMALS` /
+  `MEAN_DECIMALS`.
+
+### Tagged CSV (`mrscript export … .csv`)
+
+Every row carries a `row_type` flag so an external formatter (Excel macro or openpyxl
+script) can apply styling **without parsing content**.
+
+Fixed meta columns in every row:
+
+| Column | Meaning |
+|--------|---------|
+| `row_type` | Semantic type (see below) |
+| `table_n` | Table sequence number (blank for file sentinels) |
+| `section_n` | Section index within the table (1-based) |
+| `label` | Human-readable label for the row |
+| `stat` | Stat name (`col_pct` / `n` / `mean` / …) or blank |
+| `stub_level` | Nesting depth of `STUBS BY` chains (0 = top level) |
+| `is_heading` | 1 if the row is a HEADING (display-only), else 0 |
+
+Followed by data columns: `Col_1 … Col_N` (one per banner leaf), then a `__END__`
+sentinel column.
+
+??? note "Row types"
+
+    | `row_type` | Meaning |
+    |------------|---------|
+    | `FILE_START` / `FILE_END` | First / last row of the file |
+    | `TABLE_START` / `TABLE_END` | Beginning / end of a table block |
+    | `TABLE_NUMBER` / `TABLE_TITLE` | Table sequence number / title rows |
+    | `BANNER_GROUP` | Outer (spanning) banner group header — only for nested/crossed banners |
+    | `BANNER_HEADER` | Column header label row |
+    | `SECTION_LABEL` | Variable label at the start of each section |
+    | `STUB` | A distribution row (count / pct / sig repeated per stat) |
+    | `NET` | A NET row (aggregate of stubs; bold in formatters) |
+    | `HEADING` | A display-only heading row (blank data cells) |
+    | `BASE` | The base (n) row for the section |
+    | `STAT_MEAN` / `STAT_STD_DEV` / `STAT_STD_ERROR` / `STAT_SUM` / `STAT_MEDIAN` / `STAT_MODE` / `STAT_QUARTILE` | Summary rows |
+    | `SIG_LEGEND` | Significance legend (one row per legend line, per table) |
+    | `FOOTER` | Table footer; one row per newline in the FOOTER clause |
+
+All tables are written into one CSV file surrounded by `FILE_START` / `FILE_END`
+sentinels. Encoding is UTF-8 with BOM (`utf-8-sig`) for Excel compatibility.
+
+### Styled Excel (`mrscript export … .xlsx`)
+
+An openpyxl-generated workbook. All tables start with an **INDEX** sheet (with
+hyperlinks to each table), followed by one sheet per table (`multi_sheet` layout) or
+all tables on a single "Tables" sheet (`single_sheet` layout).
+
+| Theme | Look |
+|-------|------|
+| `classic` | Grey-on-white (default) |
+| `blue` | Blue corporate palette |
+| `teal` | Teal / green palette |
+| `minimal` | No background colours — black-on-white only |
+
+### Command-line interface
+
+```powershell
+mrscript run script.mrs                       # Execute; print text to stdout.
+mrscript run script.mrs --data data.sav       # Override the SOURCE file.
+
+mrscript export script.mrs report.csv         # Execute; write tagged CSV.
+mrscript export script.mrs report.xlsx        # Execute; write styled Excel.
+mrscript export script.mrs report.xlsx --theme blue --layout single_sheet
+mrscript export script.mrs report.csv --data data.sav
+
+mrscript export-data script.mrs clean.sav     # Write the transformed data out.
+                                              #   [--data F] [--source-only]
+                                              #   [--codebook book.json]
+
+mrscript project run project.yml              # Batch-run a YAML project of scripts;
+                                              #   output format per-entry by extension.
+
+mrscript build script.mrst                    # Transpile a .mrst authoring file to
+                                              #   its sibling .mrs only (--map for a
+                                              #   source map). run / export also
+                                              #   accept .mrst and transpile first.
+```

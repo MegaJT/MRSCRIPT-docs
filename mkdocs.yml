@@ -1,0 +1,113 @@
+site_name: Tablix & MRScript
+site_description: The complete guide and language reference for MRScript — the tabulation DSL behind Tablix.
+site_author: Tablix
+# Public docs repo, served under /MRSCRIPT-docs/ on GitHub Pages.
+site_url: https://megajt.github.io/MRSCRIPT-docs/
+repo_url: https://github.com/MegaJT/MRSCRIPT-docs
+repo_name: MegaJT/MRSCRIPT-docs
+edit_uri: edit/main/docs/
+copyright: Tablix — MRScript Language Reference
+
+theme:
+  name: material
+  language: en
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - def_list
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.highlight:
+      use_pygments: false   # client-side highlight.js so we can colour MRScript
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.keys
+  - pymdownx.caret
+  - pymdownx.tilde
+  - pymdownx.smartsymbols
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js
+  - javascripts/mrscript.js
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/MegaJT/MRSCRIPT-docs
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - getting-started/what-is-tablix.md
+      - getting-started/installation.md
+  - Tutorial:
+      - tutorial/first-crosstab.md
+  - How-to Recipes:
+      - guide/patterns.md
+  - Language Reference:
+      - reference/index.md
+      - 1 · Basics: reference/basics.md
+      - 2 · Data Input: reference/data-input.md
+      - 3 · Setup Blocks: reference/setup-blocks.md
+      - 4 · Data Preparation: reference/data-preparation.md
+      - 5 · Tables: reference/tables.md
+      - 6 · Output: reference/output.md
+      - 7 · Reference Details: reference/reference-details.md
+      - 8 · Quick Reference: reference/quick-reference.md

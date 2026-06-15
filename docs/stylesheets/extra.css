@@ -1,0 +1,52 @@
+/* ------------------------------------------------------------------ *
+ * Tablix / MRScript docs — theme tweaks + MRScript syntax colours.
+ * ------------------------------------------------------------------ */
+
+:root {
+  --tablix-keyword: #00897b;   /* teal — statements/keywords        */
+  --tablix-string:  #2e7d32;   /* green — quoted labels/paths       */
+  --tablix-comment: #8a8a8a;   /* muted — // and /* */ comments     */
+  --tablix-var:     #c2410c;   /* orange — $var @var %RESPID        */
+  --tablix-number:  #6a1b9a;   /* violet — numeric codes            */
+  --tablix-meta:    #1565c0;   /* blue — #for/#if authoring layer   */
+  --tablix-op:      #b71c1c;   /* red — the -> recode arrow         */
+}
+
+/* Brighter variants that read well on the dark (slate) scheme. */
+[data-md-color-scheme="slate"] {
+  --tablix-keyword: #4db6ac;
+  --tablix-string:  #81c784;
+  --tablix-comment: #9aa0a6;
+  --tablix-var:     #ffb74d;
+  --tablix-number:  #ce93d8;
+  --tablix-meta:    #64b5f6;
+  --tablix-op:      #ef9a9a;
+}
+
+/* We deliberately load NO highlight.js theme — only these token classes get a
+   colour, so everything else inherits Material's native code styling. */
+.hljs-keyword   { color: var(--tablix-keyword); font-weight: 600; }
+.hljs-built_in  { color: var(--tablix-keyword); }
+.hljs-literal   { color: var(--tablix-number); }
+.hljs-string    { color: var(--tablix-string); }
+.hljs-comment   { color: var(--tablix-comment); font-style: italic; }
+.hljs-variable  { color: var(--tablix-var); }
+.hljs-number    { color: var(--tablix-number); }
+.hljs-meta      { color: var(--tablix-meta); font-weight: 600; }
+.hljs-subst     { color: var(--tablix-meta); }
+.hljs-operator  { color: var(--tablix-op); }
+
+/* A touch more breathing room in code blocks. */
+.md-typeset pre > code {
+  line-height: 1.55;
+}
+
+/* Make the home-page hero feature cards tidy. */
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.5rem;
+}
+
+/* Slightly wider content for the big reference tables. */
+.md-grid {
+  max-width: 62rem;
+}
