@@ -21,15 +21,17 @@ Interpolation  {name}  {row.column}  {loop.index|count|first|last}
 
 ```text
 SOURCE  %RESPID  APPEND  JOIN  CONFIG  FORMAT  VARIABLE
-DERIVE  STACK  EDIT  RECODE  KEEP ROWS  DROP ROWS  COMPUTE
+DERIVE  STACK  EDIT  RECODE  KEEP ROWS  DROP ROWS  COMPUTE  RIM
 BANNER (named)  TABLE  SCOPE  EXPORT DATA
+ADDTAB  BANKED_TABLE                              (cross-table ops — reference stored tables by NAME)
+EXPECT                                            (routing assertions / data QC)
 ```
 
 ### Block closers
 
 ```text
 END CONFIG   END FORMAT   END VARIABLE   END DERIVE   END STACK
-END TABLE    END BANNER   END DEFINE   ENDNET   ENDHEADING   ENDSCOPE
+END TABLE    END BANNER   END DEFINE   END RIM   ENDNET   ENDHEADING   ENDSCOPE
 ```
 
 ### Clauses by block
@@ -40,7 +42,7 @@ END TABLE    END BANNER   END DEFINE   ENDNET   ENDHEADING   ENDSCOPE
 | `JOIN` | `WITH`  `ON`  `%RESPID`  `TYPE` (left \| inner) |
 | `CONFIG` | `OUTPUT`  `SIG_CONFIDENCE`  `SIG_CORRECTION`  `SIG_COMPARE`  `MISSING_TREATMENT`  `DEFAULT_STATS`  `SUPPRESS_STACKED_SIG`  `SUPPRESS_GRID_SIG` |
 | `FORMAT` / `TABLE` shared | `STATS`  `BANNER`  `WEIGHT`  `BASE_LABEL`  `FOOTER`  `THOUSANDS_SEPARATOR`  `MIN_BASE`  `CONFIDENTIAL`  `BLANK_SUPPRESS`  `SUPPRESS_EMPTY`  `AUTONUMBER`  `RANKING`  `SHOW_TOTAL`  `MAX_COL_WIDTH`  `DECIMALS`  `PCT_DECIMALS`  `COUNT_DECIMALS`  `MEAN_DECIMALS`  `PCT_SIGN` |
-| `TABLE`-only | `STUBS`  `DISTRIBUTION`  `ADD`  `SECTION LABEL`  `LEVEL`  `BASE`  `FILTER`  `SHEET`  `STATS_ONLY` |
+| `TABLE`-only | `STUBS`  `DISTRIBUTION`  `ADD`  `SECTION LABEL`  `LEVEL`  `BASE`  `FILTER`  `SHEET`  `STATS_ONLY`  `NAME` |
 | `GRID` table | `TYPE GRID`  `COLUMN`  `LABEL`  `FILTER`  `ANSWERED_BASE` |
 | `VARIABLE` | `LABEL`  `TYPE`  `VALUE`  `MISSING`  `SCORE` |
 | `DERIVE` | `LABEL`  `TYPE`  `SCORE`  `STUB`  `NET`  `ENDNET`  `HEADING`  `ENDHEADING` |
@@ -50,6 +52,10 @@ END TABLE    END BANNER   END DEFINE   ENDNET   ENDHEADING   ENDSCOPE
 | `EDIT` / `RECODE` | `SET`  `WHERE`  `INTO`  `ELSE`  (`->`) |
 | `COMPUTE` functions | `round`  `abs`  `sqrt`  `min`  `max` |
 | `EXPORT DATA` | `AS`  `SOURCE_ONLY`  `CODEBOOK` |
+| `RIM` | `DIMENSION`  `TARGETS`  `MAX_ITERATIONS`  `CONVERGENCE`  `WEIGHT_CAP`  `BASE_WEIGHT` |
+| `ADDTAB` | `TITLE`  `NAME`  (source table names as quoted strings) |
+| `BANKED_TABLE` | `TITLE`  `NAME`  (stub-source name + source table names as quoted strings) |
+| `EXPECT` | `WHERE`  `MISSING`  `ANSWERED`  (condition or sugar form) |
 
 ### Values
 
