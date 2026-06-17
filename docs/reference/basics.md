@@ -51,6 +51,9 @@ SOURCE 'data.sav'   // load the fieldwork file
    ──────────────────────────────────────────── */
 ```
 
+Inside a `.mrst` authoring file there is an additional comment form for the `#`-directive
+layer — see [Authoring-layer comments](#authoring-layer-comments) in §4c below.
+
 ---
 
 ## 3. Variable naming conventions
@@ -195,12 +198,40 @@ authoring layer does not recognise is passed through untouched.
 | `#elif <cond>` / `#else` | Extra branches within an `#if` |
 | `#set NAME = <value>` | Bind a value (scalar or comma list) |
 | `#include "file.mrst"` | Inline another `.mrst` file |
+| `#// comment text` | Authoring-layer comment (see below) |
 
 Each block has its **own typed closer** — `#endfor` for `#for`, `#endif` for `#if`.
 There is no generic `#end`; a mismatched closer is an error, so nesting stays
 unambiguous. A `#set` scalar is read as `{NAME}`; a comma value
 (`#set brands = coke, pepsi`) is a list that `#for` can iterate; a quoted value keeps
 its commas (`#set t = "A, B"` is one scalar).
+
+### Authoring-layer comments {#authoring-layer-comments}
+
+Ordinary `//` and `/* */` comments apply to the **MRScript lines** in a `.mrst` file.
+For the `#`-directive lines themselves, use `#//`:
+
+```mrs
+#// This whole line is a comment — stripped at transpile time, never reaches .mrs
+
+#set market = IN   #// inline: the value is just IN, the #// and everything after is removed
+#for p in 1..3   #// loop over three concept positions
+TABLE 'Concept {p}' STUBS @c{p} END TABLE
+#endfor
+```
+
+Two forms:
+
+| Form | Syntax | Effect |
+|------|--------|--------|
+| Whole-line | `#// comment` | The entire line is dropped from the generated `.mrs` |
+| Inline | `#set x = 5   #// note` | The `#//` and everything after it is removed from the directive; the directive runs normally |
+
+`#//` is used instead of `//` because directive values legitimately contain `//`
+(URLs, UNC paths like `//server/share`). The inline form only cuts at a `#//`
+preceded by whitespace, so values with `://` in them are preserved. Quoted values
+are also protected — `#set url = 'https://example.com'  #// a comment` correctly
+keeps the full URL.
 
 ### Loop sources (what `#for` iterates)
 

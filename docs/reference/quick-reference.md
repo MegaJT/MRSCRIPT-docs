@@ -12,6 +12,7 @@ SET   DEFINE … END DEFINE   CALL          (text substitution + macro inlining)
 
 ```text
 #for … #endfor   #if / #elif / #else … #endif   #set   #include   (## escapes #)
+#// comment                                                          (comment — stripped at transpile time, whole-line or inline)
 Loop sources   inline list · #set list · lo..hi range · SHEET("f","Tab") · CSV("f")
 Interpolation  {name}  {row.column}  {loop.index|count|first|last}
 ```
@@ -77,7 +78,7 @@ Scripts using these will error until the feature ships.
 |------|---------|
 | **Input readers** | `AS triple_s \| ascii \| mdd` are registered but staged (raise "not yet supported"). Only `spss` and `csv` are fully implemented today. |
 | **What-if scenarios** | `SCENARIO` blocks + per-table `COMPARE` producing baseline vs scenario Δ / %Δ tables. |
-| **Cross-table operations** | `DERIVED_TABLE` (cell arithmetic across stored results), `BANKED_TABLE` (side-by-side concat), `ADDTAB` / `CEPX` (multi-wave accumulation across stored results — in-table response pooling is already available via the `ADD` clause). |
+| **Cross-table operations** | `DERIVED_TABLE` / `MANIP` (cell arithmetic across stored results, e.g. `T3 = T1 − T2`); `CEPX` re-emit (route a stored table to a second output destination). `ADDTAB` (wave merge) and `BANKED_TABLE` (side-by-side) are already implemented — see [§20](tables.md#cross-table). |
 | **Extra significance** | chi-square, t-test (pairs), Kolmogorov-Smirnov, Mann-Whitney; pluggable test strategies / FDR / `TAILS`. |
 | **More COMPUTE** | `round(x, n)` decimals; `log` / `exp` / `floor` / `ceil` / `clip`; conditional `COMPUTE … WHERE`. |
 | **Output formats** | Word (`.docx`), PDF, PowerPoint; Triple-S / XtabML export. |

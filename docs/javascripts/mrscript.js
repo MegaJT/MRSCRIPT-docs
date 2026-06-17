@@ -39,6 +39,9 @@
         "MIN_BASE", "MASK", "CONFIDENTIAL", "BLANK_SUPPRESS", "SUPPRESS_EMPTY",
         "AUTONUMBER", "RANKING", "MAX_COL_WIDTH", "PCT_SIGN", "PCT_DECIMALS",
         "COUNT_DECIMALS", "MEAN_DECIMALS",
+        // RIM weighting
+        "RIM", "DIMENSION", "TARGETS", "MAX_ITERATIONS", "CONVERGENCE",
+        "WEIGHT_CAP", "BASE_WEIGHT",
         // routing assertions
         "EXPECT", "ANSWERED",
         // condition operators / values
