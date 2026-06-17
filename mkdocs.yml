@@ -99,6 +99,7 @@ nav:
   - Tutorial:
       - tutorial/first-crosstab.md
       - tutorial/health-check.md
+      - tutorial/data-diff.md
   - How-to Recipes:
       - guide/patterns.md
   - Language Reference:
@@ -112,3 +113,4 @@ nav:
       - 7 · Data Health: reference/health.md
       - 8 · Reference Details: reference/reference-details.md
       - 9 · Quick Reference: reference/quick-reference.md
+      - 10 · Data Diff: reference/diff.md
