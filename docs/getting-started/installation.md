@@ -1,138 +1,113 @@
 # Install & first run
 
-Tablix is a normal Windows desktop application. **You do not need Python or any
-technical setup** — everything it needs is bundled inside the installer. Download,
-install, open, and you're ready to tabulate.
+This page gets `mrscript` working on your machine and walks you through running your
+very first script from the command line.
 
 !!! info "What you need"
 
-    - **Windows 10 or 11.**
-    - The **Tablix installer** (`Tablix-Setup.exe`) — see *Get the installer* below.
-    - A survey data file to work with (`.sav` or `.csv`).
-
-    You do **not** need Python, Excel, SPSS, or any other software installed.
+    - **Python 3.11 or newer** — check with `python --version`.
+    - A survey data file to play with (`.sav` or `.csv`). If you don't have one yet,
+      any small SPSS export will do.
 
 ---
 
-## Get the installer
+## Install
 
-Tablix is distributed as a **free 14-day trial**. Request it from the product site —
-the download link is emailed to you:
+Tablix ships as two Python packages:
 
-[:material-download: Get Tablix (start free trial){ .md-button .md-button--primary }](https://mrtabulate.com)
+- **`mrscript-core`** — the engine + the `mrscript` command-line tool (no GUI).
+- **`mrscript-desktop`** — the PySide6 desktop app (depends on the core).
 
-<!-- TODO: confirm the exact download URL / trial flow and update this link. -->
+=== "Just the engine + CLI"
 
-You'll receive a single file: **`Tablix-<version>-Setup.exe`** (where `<version>` is
-the release number, e.g. `Tablix-1.0.0-Setup.exe`).
-
----
-
-## Install it
-
-1. **Double-click** the downloaded `Tablix-<version>-Setup.exe`.
-2. Windows may show a blue **"Windows protected your PC"** screen. This appears
-   because the installer isn't yet code-signed — it is safe to continue:
-    - Click **More info**
-    - Then click **Run anyway**
-3. Follow the installer (Next → Next → Install). It installs in a minute or two.
-4. When it finishes, launch **Tablix** from the **Start Menu** (or the desktop
-   shortcut).
-
-!!! note "Why the security warning?"
-
-    The current build is unsigned, so Windows SmartScreen flags the publisher as
-    unknown. That's expected for now — "More info → Run anyway" is the correct
-    response. (A signed build will remove this warning in a future release.)
-
----
-
-## The Tablix window at a glance
-
-When Tablix opens you'll see:
-
-| Area | What it's for |
-|------|---------------|
-| **Toolbar** | `Run ▶` · `Stop ■` · `Open Script` · `Open Data` · `Open Output Folder` |
-| **Script tab** | Where you write or open your MRScript (`.mrs`) |
-| **Data tab** | A grid showing the loaded data file |
-| **Output tab** | The tables your script produces |
-| **Variable Explorer** | Lists the variables your script uses (source `$` in blue, derived `@` in green) |
-| **Problems panel** (bottom) | Any errors or warnings, updated live as you type |
-
----
-
-## Your first run, inside the app
-
-1. **Open your data:** click **Open Data** on the toolbar and pick your `.sav` or
-   `.csv` file. The **Data tab** fills with the rows so you can see it loaded.
-2. **Write a script:** click the **Script tab** and type a small script (or click
-   **Open Script** to load an existing `.mrs`):
-
-    ```mrs
-    SOURCE 'survey.sav'              // ← the file you just opened
-
-    TABLE 'My first table'
-      STUBS  $q1                     // ← any single variable in your data
-      STATS  n, col_pct
-    END TABLE
+    ```powershell
+    # from the mrscript-core/ folder
+    pip install -e ".[dev,output]"
     ```
 
-3. **Run it:** click **Run ▶** on the toolbar.
-4. **See the result:** the **Output tab** shows your table — counts and column
-   percentages for `$q1`.
-5. **Find the saved output:** click **Open Output Folder** to open the folder where
-   Tablix wrote the output file.
+    The `output` extra pulls in the Excel writer (openpyxl); `dev` adds the test
+    tooling. After this, the `mrscript` command is available.
+
+=== "The desktop app"
+
+    ```powershell
+    # from the mrscript-desktop/ folder
+    pip install -e ".[dev]"
+
+    # launch it
+    python -m app.main
+    # ...or, via the installed entry point:
+    tablix
+    ```
+
+Verify the CLI is installed:
+
+```powershell
+mrscript --help
+```
+
+---
+
+## Write your first script
+
+Create a file called `hello.mrs` next to your data file:
+
+```mrs
+SOURCE 'survey.sav'              // ← change to your file name
+
+TABLE 'My first table'
+  STUBS  $q1                     // ← any single variable in your data
+  STATS  n, col_pct
+END TABLE
+```
 
 !!! tip "Don't know your variable names?"
 
-    Look at the **Variable Explorer** (it lists the variables in your script), or
-    browse the loaded file in the **Data tab**. Expanding a variable shows its
-    categories and a quick frequency.
-
-That's a complete tabulation. The [tutorial](../tutorial/first-crosstab.md) builds
-from here to a full banner crosstab with derived variables, filters, weighting, and
-significance testing.
+    Open the file in the **desktop app** and look at the **Variable Explorer** — it
+    lists every variable referenced in your script. Or load the data and browse the
+    **Data** tab.
 
 ---
 
-## Where Tablix stores things
-
-| Item | Location |
-|------|----------|
-| Output files | the folder shown by **Open Output Folder** |
-| Log file (for troubleshooting) | `%LOCALAPPDATA%\Tablix\logs\tablix.log` |
-
-If something goes wrong, the **Problems panel** at the bottom of the window explains
-it in plain language; the log file has the technical detail if you need to send it to
-support (`hello@mrtabulate.com`).
-
----
-
-## Advanced: command-line & developer install
-
-!!! warning "You only need this section if you are a developer or want to automate runs"
-
-    Everyday DP users can ignore everything below — the desktop app does it all.
-
-Tablix also ships an engine with a command-line tool, `mrscript`, useful for batch
-jobs, automation, and CI. This path **does** require Python 3.11+.
+## Run it
 
 ```powershell
-# install the engine + CLI (from the mrscript-core/ source folder)
-pip install -e ".[dev,output]"
+mrscript run hello.mrs
 ```
 
-Then drive it from the command line — the format is chosen by the output file's
-extension:
+You'll see a plain-text table printed to the screen, something like:
+
+```text
+Table 1
+My first table
+Base: All respondents
+
+                 Total
+Total              105
+  Very satisfied    47
+                   45%
+  Satisfied         38
+                   36%
+  Dissatisfied      20
+                   19%
+```
+
+That's a complete tabulation job — one variable, counts and column percentages.
+
+---
+
+## Produce other formats
+
+The CLI picks the output format from the **file extension** you give it:
 
 ```powershell
-mrscript run         script.mrs                   # print text tables to the screen
-mrscript run         script.mrs --data other.sav  # run, but use a different data file
-mrscript export      script.mrs report.csv        # tagged CSV (for external formatting)
-mrscript export      script.mrs report.xlsx       # styled Excel workbook
-mrscript export-data script.mrs clean.sav         # write the transformed DATA back out
-mrscript project run project.yml                  # batch-run many scripts (YAML)
+mrscript run         hello.mrs                   # print text tables to the screen
+mrscript run         hello.mrs --data other.sav  # run, but use a different data file
+mrscript export      hello.mrs report.csv        # tagged CSV (for external formatting)
+mrscript export      hello.mrs report.xlsx       # styled Excel workbook
+mrscript export      hello.mrs report.xlsx --theme blue --layout single_sheet
+mrscript export-data hello.mrs clean.sav         # write the transformed DATA back out
+mrscript project run project.yml                 # batch-run many scripts (YAML)
 ```
 
 | Command | What it produces |
@@ -149,6 +124,6 @@ See [Output formats & the CLI](../reference/output.md) for every flag.
 
 ## Next: build something real
 
-The [**tutorial**](../tutorial/first-crosstab.md) takes you from a one-variable table
-to a proper banner crosstab with derived variables, filters, and significance
-testing — one step at a time.
+You now have the tool running. The [**tutorial**](../tutorial/first-crosstab.md)
+takes you from this one-variable table to a proper banner crosstab with derived
+variables, filters, and significance testing — one step at a time.

@@ -48,12 +48,19 @@ This is the page you keep open while you script. If you are new, work through th
 
     `EXPORT DATA` (write the dataset back out) and the output formats + CLI.
 
--   **[7 · Reference details](reference-details.md)**
+-   **[7 · Data health](health.md)**
+
+    `mrscript health` — pre-tabulation QC: respondent checks (duplicate IDs,
+    out-of-range codes, dead records), quality signals (straightliners, speeders,
+    flatline batteries), structural checks (broken filters), and `EXPECT`
+    routing assertions. Text / JSON / CSV reports.
+
+-   **[8 · Reference details](reference-details.md)**
 
     The complete `STATS` list, condition syntax, base computation, missing values,
     and `STATS` inherit/override/merge modes.
 
--   **[8 · Quick reference](quick-reference.md)**
+-   **[9 · Quick reference](quick-reference.md)**
 
     Every keyword at a glance, common patterns, and planned features.
 

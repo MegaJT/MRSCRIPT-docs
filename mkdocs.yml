@@ -1,11 +1,10 @@
 site_name: Tablix & MRScript
 site_description: The complete guide and language reference for MRScript — the tabulation DSL behind Tablix.
 site_author: Tablix
-# Public docs repo, served under /MRSCRIPT-docs/ on GitHub Pages.
 site_url: https://megajt.github.io/MRSCRIPT-docs/
-repo_url: https://github.com/MegaJT/MRSCRIPT-docs
-repo_name: MegaJT/MRSCRIPT-docs
-edit_uri: edit/main/docs/
+repo_url: https://github.com/MegaJT/MRSCRIPT
+repo_name: MegaJT/MRSCRIPT
+edit_uri: edit/main/docs-site/docs/
 copyright: Tablix — MRScript Language Reference
 
 theme:
@@ -90,7 +89,7 @@ extra:
   generator: false
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/MegaJT/MRSCRIPT-docs
+      link: https://github.com/MegaJT/MRSCRIPT
 
 nav:
   - Home: index.md
@@ -99,6 +98,7 @@ nav:
       - getting-started/installation.md
   - Tutorial:
       - tutorial/first-crosstab.md
+      - tutorial/health-check.md
   - How-to Recipes:
       - guide/patterns.md
   - Language Reference:
@@ -109,5 +109,6 @@ nav:
       - 4 · Data Preparation: reference/data-preparation.md
       - 5 · Tables: reference/tables.md
       - 6 · Output: reference/output.md
-      - 7 · Reference Details: reference/reference-details.md
-      - 8 · Quick Reference: reference/quick-reference.md
+      - 7 · Data Health: reference/health.md
+      - 8 · Reference Details: reference/reference-details.md
+      - 9 · Quick Reference: reference/quick-reference.md

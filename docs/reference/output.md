@@ -143,4 +143,11 @@ mrscript build script.mrst                    # Transpile a .mrst authoring file
                                               #   its sibling .mrs only (--map for a
                                               #   source map). run / export also
                                               #   accept .mrst and transpile first.
+
+mrscript health script.mrs                    # Run data health / QC checks; print a
+                                              #   grouped text summary to stdout.
+mrscript health script.mrs --json r.json      # Also write a JSON report.
+mrscript health script.mrs --csv flagged.csv  # Also write a flagged-respondent CSV.
+mrscript health script.mrs --fail-on error    # Exit 2 when any errors are found.
+                                              # (--fail-on warn: exit 2 on errors or warns)
 ```

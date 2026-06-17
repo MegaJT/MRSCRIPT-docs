@@ -202,42 +202,6 @@ unambiguous. A `#set` scalar is read as `{NAME}`; a comma value
 (`#set brands = coke, pepsi`) is a list that `#for` can iterate; a quoted value keeps
 its commas (`#set t = "A, B"` is one scalar).
 
-### Comments
-
-Two different comment styles apply to the two kinds of line:
-
-| On a… | Use | Appears in the generated `.mrs`? |
-|-------|-----|----------------------------------|
-| literal MRScript line | `//` or `/* … */` | yes (as a normal MRScript comment) |
-| `#` directive line | **`#//`** | **no** — stripped at transpile time |
-
-```mrs
-#// A whole-line authoring comment — it never reaches the generated .mrs.
-#set market = PH        #// inline comment after a directive value
-#for p in positions     #// loop the product positions
-TABLE '...' STUBS $I_{p}_Q1 END TABLE
-#endfor
-```
-
-!!! warning "Don't put `//` or `/* */` on a `#` directive line"
-
-    On a directive, everything after the keyword is read **literally**, so a `//`
-    or `/* … */` would be **swallowed into the value** — e.g.
-    `#set market = PH // note` makes `{market}` equal to `PH // note`, silently
-    breaking a later `#if`. Block comments are worse: a `/* … */` wrapped around a
-    `#for`/`#set` does **not** disable it (the directive still runs) — the authoring
-    layer only recognises a line by its leading `#`. Use **`#//`** on directive
-    lines instead.
-
-    `#//` is used (rather than `//`) because directive values legitimately contain
-    `//` — URLs (`https://…`) and UNC paths (`//server/share`) — but never `#//`.
-    The inline form is quote-aware and only cuts at a `#//` preceded by whitespace,
-    so those values and any quoted `#//` are preserved.
-
-To **disable** a directive, either delete it or `#//` it out; to disable a whole
-block, comment each directive line (and keep `#for`/`#endfor`, `#if`/`#endif`
-balanced).
-
 ### Loop sources (what `#for` iterates)
 
 | Source | Example | Yields |

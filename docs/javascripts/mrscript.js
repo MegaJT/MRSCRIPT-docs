@@ -37,6 +37,8 @@
         "MIN_BASE", "MASK", "CONFIDENTIAL", "BLANK_SUPPRESS", "SUPPRESS_EMPTY",
         "AUTONUMBER", "RANKING", "MAX_COL_WIDTH", "PCT_SIGN", "PCT_DECIMALS",
         "COUNT_DECIMALS", "MEAN_DECIMALS",
+        // routing assertions
+        "EXPECT", "ANSWERED",
         // condition operators / values
         "WHERE", "AND", "OR", "NOT", "IN", "BETWEEN", "ALL",
         "respondents",

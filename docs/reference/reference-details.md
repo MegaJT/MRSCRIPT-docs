@@ -1,4 +1,4 @@
-# Part 7 · Reference details
+# Part 8 · Reference details
 
 ## 22. STATS values — complete list {#stats-values}
 

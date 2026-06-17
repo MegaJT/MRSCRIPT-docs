@@ -1,4 +1,4 @@
-# Part 8 · Quick reference
+# Part 9 · Quick reference
 
 ## 27. All keywords at a glance
 
@@ -11,8 +11,7 @@ SET   DEFINE … END DEFINE   CALL          (text substitution + macro inlining)
 ### Authoring layer (.mrst → .mrs, transpiled before everything below)
 
 ```text
-#for … #endfor   #if / #elif / #else … #endif   #set   #include
-Comments       #//  (inline or whole-line; stripped from output)   ## escapes a literal #
+#for … #endfor   #if / #elif / #else … #endif   #set   #include   (## escapes #)
 Loop sources   inline list · #set list · lo..hi range · SHEET("f","Tab") · CSV("f")
 Interpolation  {name}  {row.column}  {loop.index|count|first|last}
 ```

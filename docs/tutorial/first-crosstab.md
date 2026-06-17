@@ -40,7 +40,7 @@ END TABLE
 - **`STUBS`** sets the **rows** of the table — here, the categories of `$q1`.
 - **`STATS`** chooses which numbers appear: `n` (count) and `col_pct` (column %).
 
-Run it — click **Run ▶** in Tablix (or, from the command line, `mrscript run tutorial.mrs`):
+Run it with `mrscript run tutorial.mrs`:
 
 ```text
 Table 1
@@ -367,6 +367,10 @@ ENDSCOPE
 ## Where to go next
 
 <div class="grid cards" markdown>
+
+-   :material-stethoscope: **[Pre-flight health check](health-check.md)** —
+    check your data before tabulating: duplicate IDs, rogue codes, straightliners,
+    and `EXPECT` routing assertions.
 
 -   :material-format-list-checks: **[How-to recipes](../guide/patterns.md)** —
     ready-made patterns for common DP tasks (concept tests, diaries, T2B, pooling…).
