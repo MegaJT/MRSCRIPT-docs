@@ -180,6 +180,7 @@ merge (`STATS + …`).
 | `LEVEL @stack_name` | Tabulate against a stacked frame ([§12](data-preparation.md#stack)). Optional — inferred from the variable names when omitted; explicit `LEVEL` takes precedence. |
 | `BASE respondents` | Unique-respondent base. On a `LEVEL` table it corrects for rotation; on a non-stacked table it de-duplicates by `%RESPID` (which must be declared). |
 | `SHEET 'tab name'` | Target worksheet name in Excel output (no effect on text output). |
+| `NAME 'handle'` | Register this table in the table store under `handle` instead of its title, so a cross-table op ([§20](#cross-table)) can address it. Names must be unique within the script. |
 | `SHOW_TOTAL true\|false\|'Label'` | Show (default), hide, or relabel the leading Total column. The Total column is excluded from significance lettering. |
 
 Other `FORMAT` directives may also appear at table level (overriding the `FORMAT`
@@ -268,3 +269,75 @@ ENDSCOPE
     - `SCOPE LABEL` is shown as the `Base: …` line in each enclosed table's text
       output (nested labels join outer→inner with `; `). Tables with no enclosing
       labelled `SCOPE` default to `Base: All respondents`.
+
+---
+
+## 20. Cross-table operations {#cross-table}
+
+Cross-table operations post-process tables that have **already been tabulated** —
+they read finished `TABLE` results out of the table store and never re-read the
+data. Each references its sources by **name**: the `NAME 'handle'` clause on a
+`TABLE` ([§17](#table)), or the table's title when no `NAME` is given. A source
+must be declared **earlier** in the script.
+
+Both produce ordinary tables that render exactly like any other (text or Excel),
+appended after the regular tables and numbered sequentially. Significance flags
+are **not** carried over — they were computed over the source bases; re-add
+`STATS sig` only if you mean to test the combined result.
+
+### ADDTAB — wave merge {#addtab}
+
+```mrs
+ADDTAB 'T1', 'T2' [, …] [TITLE 'text'] [NAME 'handle']
+```
+
+Adds the cell counts of several **same-layout** tables (same stubs × same banner)
+into one combined result — the classic roll-up of monthly waves into a quarter.
+Counts and weighted counts add; percentages are **recomputed** from the combined
+counts and bases (not averaged); means/standard deviations re-derive correctly
+from the summed sufficient statistics. Median / mode / quartile rows blank out on
+merge (a pooled distribution can't be rebuilt from summary statistics) — re-run
+those on the combined data if you need them.
+
+- `TITLE` — title of the merged table (default: the source titles joined with `+`).
+- `NAME` — store handle for the merged table (default: its title).
+- All sources must share the same sections, stub order, and banner columns —
+  otherwise the merge raises an error.
+
+```mrs
+TABLE 'Satisfaction — Jan' NAME 'Jan' STUBS $q1 BANNER $region STATS col_pct, n END TABLE
+TABLE 'Satisfaction — Feb' NAME 'Feb' STUBS $q1 BANNER $region STATS col_pct, n END TABLE
+
+ADDTAB 'Jan', 'Feb' TITLE 'Satisfaction — Q1 roll-up' NAME 'Q1'
+```
+
+### BANKED_TABLE — side-by-side tracker {#banked-table}
+
+```mrs
+BANKED_TABLE 'Stub' 'T1' [, 'T2' …] [TITLE 'text'] [NAME 'handle']
+```
+
+Places several tables (same stubs, different banners) next to each other as one
+wide table — the "tracker" view of one question across periods or geographies.
+The **first** name is the *stub source*: it supplies the row layout only. The
+remaining names are the tables whose banner columns are concatenated, left to
+right. To include the stub source's own columns, **list it again** among the
+sources.
+
+Duplicate column labels (e.g. "Total" in every wave) are disambiguated with the
+source table's title, e.g. `Total (Satisfaction — Jan)`. All sources must share
+the stub source's row layout.
+
+```mrs
+TABLE 'Satisfaction — Jan' NAME 'Jan' STUBS $q1 BANNER $region STATS col_pct, n END TABLE
+TABLE 'Satisfaction — Feb' NAME 'Feb' STUBS $q1 BANNER $region STATS col_pct, n END TABLE
+
+BANKED_TABLE 'Jan' 'Jan', 'Feb' TITLE 'Satisfaction tracker'
+```
+
+!!! tip "Simulating waves in one dataset"
+
+    The engine tabulates one dataset per run, so the wave roll-up pattern works
+    on data that already carries a wave indicator: `APPEND` the wave files (or add
+    a `wave` column), then give each wave its own `TABLE … FILTER $wave = n NAME …`
+    before the `ADDTAB`/`BANKED_TABLE`.

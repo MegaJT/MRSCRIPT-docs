@@ -372,6 +372,10 @@ ENDSCOPE
     check your data before tabulating: duplicate IDs, rogue codes, straightliners,
     and `EXPECT` routing assertions.
 
+-   :material-table-merge-cells: **[Merging waves into a tracker](wave-merging.md)** —
+    roll monthly waves into a quarter with `ADDTAB`, and show periods side by side
+    with `BANKED_TABLE`.
+
 -   :material-format-list-checks: **[How-to recipes](../guide/patterns.md)** —
     ready-made patterns for common DP tasks (concept tests, diaries, T2B, pooling…).
 

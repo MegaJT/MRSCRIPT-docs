@@ -64,6 +64,19 @@ This is the page you keep open while you script. If you are new, work through th
 
     Every keyword at a glance, common patterns, and planned features.
 
+-   **[10 · Data Diff](diff.md)**
+
+    `mrscript diff` — compare two deliveries of the same dataset: schema changes,
+    dropped/added respondents, per-cell value changes, and distribution shift
+    summaries. Text / JSON / CSV reports with configurable severity thresholds.
+
+-   **[11 · RIM Weighting](weighting.md)**
+
+    `RIM @weight … END RIM` — iterative proportional fitting (raking) to align
+    the sample to population targets. `DIMENSION` targets, convergence controls,
+    `WEIGHT_CAP`, and `BASE_WEIGHT`. Produces a derived `@weight` column usable
+    in any `TABLE WEIGHT`.
+
 </div>
 
 ---

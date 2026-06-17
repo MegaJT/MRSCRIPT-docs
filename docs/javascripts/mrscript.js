@@ -24,6 +24,8 @@
         // structure
         "STUB", "NET", "HEADING", "MAP", "FROM", "POSITIONS",
         "AXIS", "AT", "COLUMN", "SECTION", "STUBS", "DISTRIBUTION", "ADD",
+        // cross-table operations
+        "ADDTAB", "BANKED_TABLE", "NAME", "TITLE",
         // table / variable clauses
         "STATS", "LEVEL", "BASE", "FILTER", "WEIGHT", "SHEET", "LABEL",
         "VALUE", "MISSING", "SCORE", "POSITIONS", "INTO", "ELSE", "SET",
