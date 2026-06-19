@@ -64,7 +64,8 @@ the table level ([§17](tables.md)). One `FORMAT` block per script.
 | `BLANK_SUPPRESS row\|col\|both` | Hide all-zero rows / zero-base columns within a table. |
 | `SUPPRESS_EMPTY true\|false` | Drop the **whole** table when it has no data — every column base is 0 in every section. Surviving tables renumber contiguously. Default `false`. |
 | `AUTONUMBER true\|false` | Number leaf stub rows (`1. 2. 3. …`). |
-| `RANKING ascending\|descending` | Sort stub rows by their Total value. |
+| `RANKING ascending\|descending` | Sort stub rows by the **Total** column value — shorthand for `SORT col_pct ASC\|DESC ON TOTAL`. |
+| `SORT [col_pct\|n\|row_pct] [ASC\|DESC] [ON $var=code\|TOTAL]` | Sort stub rows by any banner column and stat. Full syntax in [§17 Sorting rows](tables.md#sorting). |
 | `SHOW_TOTAL true\|false\|'Label'` | Show/hide/label the leading Total column ([§17](tables.md#total-column)). |
 | `PCT_SIGN true\|false` | Append the `%` sign to percentages (default `true`). `false` renders the bare number (`56` not `56%`). Text renderer only. |
 | `MAX_COL_WIDTH n` | Text-renderer header-wrap cap per data column. |

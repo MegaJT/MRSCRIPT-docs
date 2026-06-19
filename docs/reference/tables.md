@@ -186,8 +186,8 @@ merge (`STATS + …`).
 Other `FORMAT` directives may also appear at table level (overriding the `FORMAT`
 default here): `BASE_LABEL`, `FOOTER`, `THOUSANDS_SEPARATOR`, `MIN_BASE`,
 `CONFIDENTIAL`, `BLANK_SUPPRESS`, `SUPPRESS_EMPTY`, `AUTONUMBER`, `RANKING`,
-`MAX_COL_WIDTH`, `DECIMALS`, `PCT_DECIMALS`, `COUNT_DECIMALS`, `MEAN_DECIMALS`,
-`PCT_SIGN`.
+`SORT` ([§17 Sorting rows](#sorting)), `MAX_COL_WIDTH`, `DECIMALS`, `PCT_DECIMALS`,
+`COUNT_DECIMALS`, `MEAN_DECIMALS`, `PCT_SIGN`.
 
 ```mrs
 TABLE 'T7. Oral-care concerns by age'
@@ -201,6 +201,69 @@ TABLE 'T7. Oral-care concerns by age'
   BASE_LABEL     'Total respondents'
 END TABLE
 ```
+
+### Sorting rows — SORT {#sorting}
+
+`SORT` orders a table's stub rows by the value in **any banner column**, in either
+direction, while keeping structure intact — nets and headings stay anchored, and
+summary (Mean / Std) rows always sit at the bottom. The reorder happens on the
+table itself, so **text and Excel output and persisted tables all reflect it**.
+
+```mrs
+SORT [col_pct | n | row_pct] [ASC | DESC] [ON $var = code | TOTAL]
+```
+
+| Part | Default | Meaning |
+|------|---------|---------|
+| sort key | `col_pct` (falls back to `n`) | which distribution stat to read from each cell |
+| direction | `DESC` | `DESC` high→low, `ASC` low→high (`descending` / `ascending` also accepted) |
+| `ON` column | the **Total** column | which banner column supplies the value |
+
+Columns are named by **variable + code** (`ON $region = 1`) — the same condition
+grammar as `FILTER` — never by display-label text (labels are easy to mistype and
+can be renamed). For a crossed banner, AND the parts: `ON $city = 3 AND $gender = 1`
+(operand order doesn't matter). Omit `ON`, or write `ON TOTAL`, to sort by the
+Total column.
+
+`SORT` is valid in the global `FORMAT` block or per `TABLE` (table overrides
+global). `RANKING ascending|descending` is the simple shorthand for "sort by the
+Total column" — exactly `SORT col_pct ASC|DESC ON TOTAL`.
+
+**Worked example.** Order brands by their score in the *Female* column, high→low:
+
+```mrs
+TABLE 'Brand awareness'
+  STUBS  $brand
+  BANNER $gender
+  STATS  col_pct, n
+  SORT   col_pct DESC ON $gender = 2   // $gender = 2 is the Female column
+END TABLE
+```
+
+Suppose the unsorted table's Female column reads Acme 18%, Brava 42%, Cosma 31%:
+
+```
+Before (script order)          After (SORT … ON $gender = 2)
+  Brand    Total  Female         Brand    Total  Female
+  Acme      …      18%           Brava     …      42%
+  Brava     …      42%           Cosma     …      31%
+  Cosma     …      31%           Acme      …      18%
+```
+
+The rows now run Brava → Cosma → Acme, even though the Total or Male columns might
+rank them differently. Ties keep their original script order; a no-base cell sorts
+last.
+
+**Structure is respected:**
+
+- A **NET** row stays glued to its members; the members sort *within* the net, and
+  sibling nets sort by their net row's value.
+- A **HEADING** row stays atop the block it labels; heading groups keep their
+  script order.
+- **Summary rows** (Mean / Std) are never reordered — they always anchor at the bottom.
+
+> Out of scope (v1): sorting whole *sections* relative to each other (each section
+> sorts independently; section order is preserved) and sorting by a summary-row value.
 
 ### Total column {#total-column}
 

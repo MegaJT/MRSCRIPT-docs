@@ -46,6 +46,27 @@ Configure the test with [`CONFIG SIG_CONFIDENCE / SIG_COMPARE / SIG_CORRECTION`]
 
 ---
 
+## Sort a table by a banner column
+
+Order rows by the value in any banner column — here, brands ranked by their share
+in the *Female* column, high→low. Columns are named by **variable + code**, not by
+label.
+
+```mrs
+TABLE 'Brand awareness by gender'
+  STUBS  $brand
+  BANNER $gender
+  STATS  col_pct, n
+  SORT   col_pct DESC ON $gender = 2   // Female column; omit ON to sort by Total
+END TABLE
+```
+
+`SORT` keeps structure intact — `NET` and `HEADING` rows stay anchored and summary
+rows (Mean / Std) stay at the bottom. `RANKING descending` is the shorthand for
+"sort by the Total column". Full options in [§17 Sorting rows](../reference/tables.md#sorting).
+
+---
+
 ## Clean, label and tabulate a coded CSV
 
 CSV columns carry no labels, so label them yourself (or supply a `CODEBOOK`).
