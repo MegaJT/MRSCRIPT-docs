@@ -160,6 +160,85 @@ Significance compares the columns (the same respondents → paired), so the test
 approximate and a non-fatal advisory is emitted — drop the flags with
 `CONFIG SUPPRESS_GRID_SIG true`. A `GRID` has no Total column and no `BANNER`.
 
+### Summary / top-box battery tables — `TYPE SUMMARY` {#summary}
+
+A `SUMMARY` table consolidates a **battery** of rating questions (`q1..qN` sharing a
+scale) into **one** table. You list the battery with `STATEMENTS` and the summary
+**measures** with `MEASURE`; the result is **measure-major** — one labelled block per
+measure (Top-2-Box, Mean, …) with **one row per statement** inside it — and it keeps
+the usual banner columns (Total + optional demographics) and significance.
+
+```mrs
+TABLE 'Brand agreement — summary' TYPE SUMMARY
+  STATEMENTS @easy, @value, @recommend   -- the battery (rows); share a 1-5 scale
+  SCALE 1..5                              -- shared scale endpoints (see resolution below)
+  MEASURE TOP 2     'Top-2-Box'           -- % choosing the top 2 scale points
+  MEASURE BOTTOM 2  'Bottom-2-Box'
+  MEASURE NET (3)   'Neutral'             -- an explicit code set
+  MEASURE mean      'Mean'                -- a score statistic
+  MEASURE median    'Median'
+  BANNER  $gender                         -- optional; a Total column is always shown
+  STATS   col_pct, n, sig
+END TABLE
+```
+
+| Clause | Meaning |
+|--------|---------|
+| `STATEMENTS v1, v2, …` | The battery variables — one **row** each, inside every measure block. Each uses its variable label as the row label. Categorical or numeric (not open-end). |
+| `MEASURE TOP n ['Label']` | The **n highest** scale points (e.g. `TOP 2` on a 1-5 scale = codes 4,5). |
+| `MEASURE BOTTOM n ['Label']` | The **n lowest** scale points (`BOTTOM 2` = codes 1,2). |
+| `MEASURE NET (a, b, …) ['Label']` | An **explicit** code set — any box, not just the ends (e.g. `NET (3)` = the neutral midpoint). |
+| `MEASURE <stat> ['Label']` | A **score statistic** row — `mean`, `median`, `std_dev`, `std_error`, `sum`, `mode`. Uses the variable's `SCORE` (or code-as-score when none is declared). |
+| `SCALE lo..hi` | The shared scale endpoints used by `TOP`/`BOTTOM`. Optional — see resolution. |
+
+**Box rows** (`TOP`/`BOTTOM`/`NET`) show a percentage (and count, if `n` is in
+`STATS`) over **each statement's own valid base**, so item-nonresponse on one
+statement never distorts the others. **Score rows** (`mean`/`median`/…) show a single
+value. The leading **Base** row shows the banner column universe (in-scope
+respondents).
+
+**`TOP`/`BOTTOM` scale resolution** (per statement), in precedence:
+
+1. an explicit `SCALE lo..hi` → `TOP n` = the highest `n` of `lo..hi`;
+2. else the variable's **declared value codes** (so a labelled 1-5 scale needs no
+   `SCALE`);
+3. else the distinct values present in the data (data-dependent — prefer `SCALE` or
+   `NET` for numeric batteries with no value labels).
+
+Significance runs over the **banner columns** as for a normal table (box rows:
+column-proportion *z*; Mean rows: Welch *t*). `SORT` reorders statements within each
+block. `LEVEL` (stacked) summary tables are not supported.
+
+**Worked example.** With three 1-5 rating items — `rate_1=[3,4,5,3,2,4]`,
+`rate_2=[3,3,4,3,4]` (one non-response), `rate_3=[3,5,3,3,1,4]`:
+
+```mrs
+TABLE 'Rating battery — summary' TYPE SUMMARY
+  STATEMENTS $rate_1, $rate_2, $rate_3
+  SCALE 1..5
+  MEASURE TOP 2    'Top-2-Box'
+  MEASURE BOTTOM 2 'Bottom-2-Box'
+  MEASURE mean     'Mean'
+  STATS col_pct, n
+END TABLE
+```
+
+```
+                               Total
+Top-2-Box
+  Rating item 1                  50%      (3 of 6)
+  Rating item 2                  40%      (2 of 5 — over its valid base, not 6)
+  Rating item 3                  33%      (2 of 6)
+Bottom-2-Box
+  Rating item 1                  17%
+  Rating item 2                   0%      (a measured zero, base 5)
+  Rating item 3                  17%
+Mean
+  Rating item 1                 3.50
+  Rating item 2                 3.40
+  Rating item 3                 3.17
+```
+
 ### STATS
 
 ```mrs
@@ -343,10 +422,13 @@ data. Each references its sources by **name**: the `NAME 'handle'` clause on a
 `TABLE` ([§17](#table)), or the table's title when no `NAME` is given. A source
 must be declared **earlier** in the script.
 
-Both produce ordinary tables that render exactly like any other (text or Excel),
-appended after the regular tables and numbered sequentially. Significance flags
-are **not** carried over — they were computed over the source bases; re-add
+They all produce ordinary tables that render exactly like any other (text or
+Excel), appended after the regular tables and numbered sequentially. Significance
+flags are **not** carried over — they were computed over the source bases; re-add
 `STATS sig` only if you mean to test the combined result.
+
+The three operations are `ADDTAB` (wave merge), `BANKED_TABLE` (side-by-side
+tracker), and `MANIP` (cell arithmetic — derived tables).
 
 ### ADDTAB — wave merge {#addtab}
 
@@ -404,3 +486,56 @@ BANKED_TABLE 'Jan' 'Jan', 'Feb' TITLE 'Satisfaction tracker'
     on data that already carries a wave indicator: `APPEND` the wave files (or add
     a `wave` column), then give each wave its own `TABLE … FILTER $wave = n NAME …`
     before the `ADDTAB`/`BANKED_TABLE`.
+
+### MANIP — derived tables (cell arithmetic) {#manip}
+
+```mrs
+MANIP 'A' <op> 'B' [ON measure] [TITLE 'text'] [NAME 'handle']
+```
+
+Builds a new table by combining two **same-layout** tables (same stubs × same
+banner) **cell by cell** with one arithmetic operation — the "table maths" that
+`ADDTAB` and `BANKED_TABLE` don't do: *this wave minus last wave*, *segment
+indexed to total*, *brand A as a share of the category*.
+
+| `<op>` | Result of each cell | Default `ON` measure |
+|--------|---------------------|----------------------|
+| `'A' + 'B'` | sum of the chosen measure | `col_pct` |
+| `'A' - 'B'` | difference (wave-on-wave Δ) | `col_pct` |
+| `'A' * 'B'` | product | `col_pct` |
+| `'A' / 'B'` | ratio | `col_pct` |
+| `'A' INDEX 'B'` | `A ÷ B × 100` — **index, 100 = parity** | `col_pct` |
+| `'A' SHARE 'B'` | `A ÷ B × 100` — A as a **% share** of B | `n` |
+
+- **`ON measure`** picks which stored statistic of each source cell is read —
+  `col_pct`, `n`, `weighted_n`, `mean`, or `row_pct`. `INDEX` and `SHARE` are the
+  same `÷ × 100` formula with different defaults (a rate-index reads percentages,
+  a volume-share reads counts); both are overridable with `ON`.
+- A `MANIP` result is a **computed-value table**: each cell shows one number (the
+  result of the op), rendered like a mean/numeric table — no `%` sign. A
+  *difference* of percentages is in **percentage-points**, an `INDEX` is a
+  ratio × 100; the unit is conveyed by the title, not a symbol. Decimals follow
+  the **left** source's `DECIMALS` / `MEAN_DECIMALS` (default 2).
+- NET rows are computed like any other row; HEADING rows stay blank; the base row
+  is inherited from the **left** source. A cell whose divisor is 0, or where
+  either source cell is blank (no base / not applicable), renders **blank**.
+- Both sources must be declared **earlier** and share the same sections, stub
+  order, and banner columns — otherwise the op raises an error.
+- **Chaining:** a derived table's value lives in the `mean` slot, so a later
+  `MANIP` reads it with `ON mean`. Feed derived results back in to build longer
+  expressions (both operands of the second op must be derived tables).
+
+**Worked example — wave-on-wave change.** Two awareness tables, then their
+percentage-point difference:
+
+```mrs
+TABLE 'Awareness — 2025' NAME 'A25' STUBS $brand BANNER $region STATS col_pct, n END TABLE
+TABLE 'Awareness — 2024' NAME 'A24' STUBS $brand BANNER $region STATS col_pct, n END TABLE
+
+MANIP 'A25' - 'A24' ON col_pct TITLE 'Awareness Δ (2025 vs 2024)' NAME 'AwDelta'
+```
+
+If `A25` reads `Brand X = 62%` in the North column and `A24` reads `55%`, the
+`AwDelta` table shows `Brand X = 7.0` there (a 7-point gain). A region where a
+brand fell shows a negative number. To index this year's rate against last year's
+instead (100 = no change), use `MANIP 'A25' INDEX 'A24'` → `62 ÷ 55 × 100 ≈ 112.7`.

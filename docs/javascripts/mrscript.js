@@ -25,13 +25,15 @@
         "STUB", "NET", "HEADING", "MAP", "FROM", "POSITIONS",
         "AXIS", "AT", "COLUMN", "SECTION", "STUBS", "DISTRIBUTION", "ADD",
         // cross-table operations
-        "ADDTAB", "BANKED_TABLE", "NAME", "TITLE",
+        "ADDTAB", "BANKED_TABLE", "MANIP", "INDEX", "SHARE", "NAME", "TITLE",
         // table / variable clauses
         "STATS", "LEVEL", "BASE", "FILTER", "WEIGHT", "SHEET", "LABEL",
         "VALUE", "MISSING", "SCORE", "POSITIONS", "INTO", "ELSE", "SET",
         "KEEP", "DROP", "ROWS", "EMPTY", "SHOW_TOTAL", "STATS_ONLY",
         "ANSWERED_BASE", "DISPLAY", "SUPPRESS", "CUMULATIVE", "DECIMALS",
         "KEEP_IF_ZERO", "GRID", "DEFINE", "CALL",
+        // summary / top-box battery tables
+        "SUMMARY", "STATEMENTS", "MEASURE", "TOP", "BOTTOM", "SCALE",
         // CONFIG / FORMAT directives
         "OUTPUT", "SIG_CONFIDENCE", "SIG_CORRECTION", "SIG_COMPARE",
         "MISSING_TREATMENT", "DEFAULT_STATS", "SUPPRESS_STACKED_SIG",

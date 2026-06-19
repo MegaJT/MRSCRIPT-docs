@@ -23,7 +23,7 @@ Interpolation  {name}  {row.column}  {loop.index|count|first|last}
 SOURCE  %RESPID  APPEND  JOIN  CONFIG  FORMAT  VARIABLE
 DERIVE  STACK  EDIT  RECODE  KEEP ROWS  DROP ROWS  COMPUTE  RIM
 BANNER (named)  TABLE  SCOPE  EXPORT DATA
-ADDTAB  BANKED_TABLE                              (cross-table ops — reference stored tables by NAME)
+ADDTAB  BANKED_TABLE  MANIP                       (cross-table ops — reference stored tables by NAME)
 EXPECT                                            (routing assertions / data QC)
 ```
 
@@ -44,6 +44,7 @@ END TABLE    END BANNER   END DEFINE   END RIM   ENDNET   ENDHEADING   ENDSCOPE
 | `FORMAT` / `TABLE` shared | `STATS`  `BANNER`  `WEIGHT`  `BASE_LABEL`  `FOOTER`  `THOUSANDS_SEPARATOR`  `MIN_BASE`  `CONFIDENTIAL`  `BLANK_SUPPRESS`  `SUPPRESS_EMPTY`  `AUTONUMBER`  `RANKING`  `SORT` (`ASC`/`DESC`/`ON`/`TOTAL`)  `SHOW_TOTAL`  `MAX_COL_WIDTH`  `DECIMALS`  `PCT_DECIMALS`  `COUNT_DECIMALS`  `MEAN_DECIMALS`  `PCT_SIGN` |
 | `TABLE`-only | `STUBS`  `DISTRIBUTION`  `ADD`  `SECTION LABEL`  `LEVEL`  `BASE`  `FILTER`  `SHEET`  `STATS_ONLY`  `NAME` |
 | `GRID` table | `TYPE GRID`  `COLUMN`  `LABEL`  `FILTER`  `ANSWERED_BASE` |
+| `SUMMARY` table | `TYPE SUMMARY`  `STATEMENTS`  `MEASURE` (`TOP`/`BOTTOM`/`NET`/`mean`/`median`/…)  `SCALE` |
 | `VARIABLE` | `LABEL`  `TYPE`  `VALUE`  `MISSING`  `SCORE` |
 | `DERIVE` | `LABEL`  `TYPE`  `SCORE`  `STUB`  `NET`  `ENDNET`  `HEADING`  `ENDHEADING` |
 | `STUB` display props | `DISPLAY` (pct_only \| count_only \| row_pct)  `SUPPRESS`  `CUMULATIVE`  `DECIMALS`  `KEEP_IF_ZERO` |
@@ -55,6 +56,7 @@ END TABLE    END BANNER   END DEFINE   END RIM   ENDNET   ENDHEADING   ENDSCOPE
 | `RIM` | `DIMENSION`  `TARGETS`  `MAX_ITERATIONS`  `CONVERGENCE`  `WEIGHT_CAP`  `BASE_WEIGHT` |
 | `ADDTAB` | `TITLE`  `NAME`  (source table names as quoted strings) |
 | `BANKED_TABLE` | `TITLE`  `NAME`  (stub-source name + source table names as quoted strings) |
+| `MANIP` | `+` `-` `*` `/` `INDEX` `SHARE` (op between two table names)  `ON` (`col_pct`/`n`/`weighted_n`/`mean`/`row_pct`)  `TITLE`  `NAME` |
 | `EXPECT` | `WHERE`  `MISSING`  `ANSWERED`  (condition or sugar form) |
 
 ### Values
@@ -72,7 +74,8 @@ END TABLE    END BANNER   END DEFINE   END RIM   ENDNET   ENDHEADING   ENDSCOPE
 
 The full, copy-pasteable pattern library lives on the **[How-to recipes](../guide/patterns.md)**
 page — profile tables, significance crosstabs, T2B, computed indices, APPEND/JOIN,
-concept tests, diaries, GRID batteries, ADD pooling, and reproducible-dataset export.
+concept tests, diaries, GRID batteries, SUMMARY top-box batteries, ADD pooling, and
+reproducible-dataset export.
 
 ---
 
@@ -84,7 +87,7 @@ Scripts using these will error until the feature ships.
 |------|---------|
 | **Input readers** | `AS triple_s \| ascii \| mdd` are registered but staged (raise "not yet supported"). Only `spss` and `csv` are fully implemented today. |
 | **What-if scenarios** | `SCENARIO` blocks + per-table `COMPARE` producing baseline vs scenario Δ / %Δ tables. |
-| **Cross-table operations** | `DERIVED_TABLE` / `MANIP` (cell arithmetic across stored results, e.g. `T3 = T1 − T2`); `CEPX` re-emit (route a stored table to a second output destination). `ADDTAB` (wave merge) and `BANKED_TABLE` (side-by-side) are already implemented — see [§20](tables.md#cross-table). |
+| **Cross-table operations** | `CEPX` re-emit (route a stored table to a second output destination). `ADDTAB` (wave merge), `BANKED_TABLE` (side-by-side), and `MANIP` (cell arithmetic / derived tables, e.g. `T1 − T2`, index, share) are already implemented — see [§20](tables.md#cross-table). |
 | **Extra significance** | chi-square, t-test (pairs), Kolmogorov-Smirnov, Mann-Whitney; pluggable test strategies / FDR / `TAILS`. |
 | **More COMPUTE** | `round(x, n)` decimals; `log` / `exp` / `floor` / `ceil` / `clip`; conditional `COMPUTE … WHERE`. |
 | **Output formats** | Word (`.docx`), PDF, PowerPoint; Triple-S / XtabML export. |

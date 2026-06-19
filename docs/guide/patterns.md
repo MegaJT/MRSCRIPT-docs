@@ -138,6 +138,25 @@ END TABLE
 
 ---
 
+## Wave-on-wave change with MANIP
+
+Tabulate the same question for two periods, then subtract them cell by cell for a
+percentage-point delta table (positive = up, negative = down). `MANIP` reads
+stored tables — never the data — so the two sources just need the same layout.
+
+```mrs
+TABLE 'Awareness — 2025' NAME 'A25' STUBS $brand BANNER $region STATS col_pct, n END TABLE
+TABLE 'Awareness — 2024' NAME 'A24' STUBS $brand BANNER $region STATS col_pct, n END TABLE
+
+MANIP 'A25' - 'A24' ON col_pct TITLE 'Awareness Δ (2025 vs 2024)' NAME 'AwDelta'
+```
+
+Swap the operator for other table maths: `'A25' INDEX 'A24'` (index this year to
+last, 100 = no change), or `'BrandA' SHARE 'Category'` (a brand's count as a % of
+the category). See [MANIP](../reference/tables.md#manip).
+
+---
+
 ## Add profiling variables by JOIN
 
 Match a profile file onto your main file by respondent key.
@@ -267,6 +286,29 @@ END TABLE
 ```
 
 See [GRID tables](../reference/tables.md#grid-tables).
+
+---
+
+## Top-box summary of a rating battery (SUMMARY)
+
+Consolidate a whole battery into one table: a block per measure (Top-2-Box, Mean, …),
+one row per statement, with demographic banner columns and significance. No need to
+pre-derive nets — `MEASURE` builds the boxes from the scale.
+
+```mrs
+TABLE 'Agreement battery — summary' TYPE SUMMARY
+  STATEMENTS $s1, $s2, $s3
+  SCALE 1..5                       -- shared scale; or omit if the vars carry value labels
+  MEASURE TOP 2    'Top-2-Box'
+  MEASURE BOTTOM 2 'Bottom-2-Box'
+  MEASURE mean     'Mean'
+  BANNER  $gender
+  STATS   col_pct, n, sig
+END TABLE
+```
+
+Each statement's box % is over its own valid base; significance compares the banner
+columns. See [Summary tables](../reference/tables.md#summary).
 
 ---
 
