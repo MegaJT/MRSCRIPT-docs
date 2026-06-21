@@ -121,6 +121,49 @@ See [COMPUTE](../reference/data-preparation.md#compute).
 
 ---
 
+## Profile a table against the total (INDEX)
+
+`INDEX` re-expresses every distribution cell as an index versus a reference banner
+column (100 = parity, >100 over-indexes, <100 under-indexes). The default reference
+is the Total column; use `ON $var = code` to pick a specific column.
+
+```mrs
+TABLE 'Brand consideration — profile'
+  STUBS   $brand
+  BANNER  $gender
+  STATS   col_pct, n
+  INDEX                   // reference = Total column
+  DECIMALS 0              // whole-number indices read more cleanly
+END TABLE
+```
+
+The Total column always reads 100 because it is the reference. Base rows are
+inherited unchanged (real respondent counts). NET rows are indexed normally; HEADING
+rows stay blank; significance is cleared (a ratio has no single base to test).
+
+Combine with `SORT` to order rows by the pre-index rate before rescaling:
+
+```mrs
+TABLE 'Brand profile — sorted then indexed'
+  STUBS  $brand
+  BANNER $gender
+  STATS  col_pct, n
+  SORT   col_pct DESC      // order by Total % first
+  INDEX                    // then re-express as index
+  DECIMALS 0
+END TABLE
+```
+
+To index to a specific column instead of the Total, use `ON`:
+
+```mrs
+  INDEX ON $gender = 2     // Female column = 100; other columns vs Female
+```
+
+See [Index / profile tables](../reference/tables.md#index).
+
+---
+
 ## Combine waves, then tabulate (APPEND)
 
 Stack the rows of two files into one dataset.
@@ -154,6 +197,34 @@ MANIP 'A25' - 'A24' ON col_pct TITLE 'Awareness Δ (2025 vs 2024)' NAME 'AwDelta
 Swap the operator for other table maths: `'A25' INDEX 'A24'` (index this year to
 last, 100 = no change), or `'BrandA' SHARE 'Category'` (a brand's count as a % of
 the category). See [MANIP](../reference/tables.md#manip).
+
+---
+
+## Wave-on-wave significance (SIG_COMPARE prior)
+
+When the waves sit side by side in **one banner**, `SIG_COMPARE prior` tests each
+column against the one immediately before it — the "is this wave significantly
+up/down on the last?" read — instead of the full round-robin.
+
+```mrs
+CONFIG
+  SIG_CONFIDENCE 95
+  SIG_COMPARE    prior      -- each wave vs the wave before it
+END CONFIG
+
+TABLE 'Awareness by wave'
+  STUBS  $brand
+  BANNER $wave              -- Q1 (A)  Q2 (B)  Q3 (C)  Q4 (D)
+  STATS  col_pct, n, sig
+END TABLE
+```
+
+A rise is flagged on the later wave (Q2 carrying **A** = up vs Q1); a fall is
+flagged on the higher/earlier wave (Q3 carrying **D** = awareness dropped into Q4).
+Only adjacent waves are compared — Q3 never carries Q1's letter. The two columns are
+treated as **independent samples** (correct for a fresh-sample tracker); for a
+same-respondent panel read the flags as approximate, or set `SUPPRESS_WAVE_SIG true`.
+See [SIG_COMPARE](../reference/setup-blocks.md#config).
 
 ---
 
@@ -325,3 +396,124 @@ END TABLE
 ```
 
 See [ADD](../reference/tables.md#row-axis).
+
+## Tab the whole survey (AUTOTAB)
+
+Generate one banner table per codebook variable, instead of hand-writing a `TABLE`
+block for every question.
+
+```mrs
+%RESPID = $respondent_id
+
+FORMAT
+  STATS  col_pct, n, sig
+  BANNER $gender, $region
+END FORMAT
+
+AUTOTAB VARS()          -- every tabulatable variable, crossed by the FORMAT banner
+END AUTOTAB
+```
+
+Filter to a themed subset and override the banner just for that block:
+
+```mrs
+AUTOTAB VARS(TYPE single_punch, LIKE "att_*", EXCLUDE $att_other)
+  BANNER @age_group
+  SORT   col_pct DESC
+  SHEET  "Attitudes"
+END AUTOTAB
+```
+
+`VARS()` selects source variables in codebook order (`open_end`, the `%RESPID` and
+weights excluded); each generated table is a normal banner table that inherits
+`FORMAT` and any clause you put on the block. See
+[AUTOTAB / VARS()](../reference/tables.md#auto-tab).
+
+---
+
+## Draft a table from plain English (`assist`)
+
+When you know *what* you want but not the exact clause spelling, let the assistant
+write the block — it is grounded on your dataset's variables and validates its own
+output through the real parser before showing it.
+
+```
+mrscript assist "tab q1 by gender and region with col%, n, sig and the mean" --data survey.sav
+```
+
+```mrs
+TABLE "Overall Satisfaction"
+    STUBS $q1
+    BANNER $gender, $region
+    STATS col_pct, n, sig, mean
+END TABLE
+```
+
+It also writes `DERIVE` blocks (`--type derive`), and `--out FILE` saves the snippet:
+
+```
+mrscript assist "derive age groups under 35, 35-54, 55+" --type derive --out age_group.mrs
+```
+
+`assist` needs an AI provider: set `ANTHROPIC_API_KEY` for Anthropic's API, or
+`MRSCRIPT_ASSIST_URL` (+ `MRSCRIPT_ASSIST_MODEL`) to use a **local model** (Ollama,
+LM Studio) with no key and no cost. With no provider it prints a clear error and
+exits — the rest of `mrscript` is unaffected. See [NL
+Assistant](../reference/assist.md).
+
+## Suggest nets/recodes from value labels (`suggest`)
+
+When a variable's grouping is *implied by its labels* — a 5-point scale wants
+top/bottom-box nets, a brand list wants themed nets — let `suggest` read the labels
+and propose a validated `DERIVE`. You name the variable; it picks the grouping.
+
+```
+mrscript suggest $q1 --data survey.sav
+```
+
+```mrs
+DERIVE @q1_grp
+    NET "Agree (Top 2 Box)"
+        STUB 4 WHERE $q1 = 4
+        STUB 5 WHERE $q1 = 5
+    ENDNET
+    STUB 3 "Neutral" WHERE $q1 = 3
+    NET "Disagree (Bottom 2 Box)"
+        STUB 1 WHERE $q1 = 1
+        STUB 2 WHERE $q1 = 2
+    ENDNET
+END DERIVE
+```
+
+It auto-detects whether the variable is an ordered **scale** (→ top/bottom-box) or
+**nominal** (→ thematic nets); force it with `--kind scale|nominal`. `suggest` shares
+the same AI-provider setup as `assist` (Anthropic or a local model) and validates the
+DERIVE against your data before printing it. See [Recode
+Suggester](../reference/suggest.md).
+
+## Drill a cell to its respondents (`provenance`)
+
+When a client asks *"who are the 2 people in the Strongly-Agree / Male cell?"*, drill
+the cell back to its respondent IDs — no dropping into SPSS to rebuild the filter:
+
+```
+mrscript provenance survey.mrs --table 1 --row 5 --col "$gender = 1" --data survey.sav
+```
+
+```
+Table 1 - Overall Satisfaction
+  Cell:  Strongly Agree (code 5)  x  Male (A)
+  Base:  5 in column        Count: 2
+
+  Contributing respondents (%RESPID):
+    respondent_id    weight     row
+    5                -          4
+    10               -          9
+```
+
+Address the cell by `--table N` (or a table `NAME`/title), `--row` (a stub code,
+stub label, or **NET** label), and `--col` (a column **label**, sig **letter**,
+0-based **index**, a `"$var = code"` **condition**, or omit it for the **Total**).
+Add `--out worklist.csv` to write the full respondent list (with weights). Weighted
+tables report the weighted count Σw; stacked (`LEVEL`) tables list the exposure rows
+with the real respondent behind each. See [Cell Provenance](../reference/provenance.md).

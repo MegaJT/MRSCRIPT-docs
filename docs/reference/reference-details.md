@@ -17,7 +17,11 @@ when banner columns share respondents); a Mean row uses an independent-samples
 (**Welch**) t-test. Columns are lettered in the header as `Label (B)`; a cell flagged
 `B` is significantly **higher** than column B at the `SIG_CONFIDENCE` level
 (UPPERCASE = high CL, lowercase = low CL in dual mode). Which columns are compared
-follows `SIG_COMPARE`; correction follows `SIG_CORRECTION` (default `none`). A banner
+follows `SIG_COMPARE` — `segment` (within each banner group), `all` (every column),
+`total` (each vs the Total), or `prior` (**wave-on-wave**: each column vs the one
+immediately to its left, within each segment, treated as independent samples —
+approximate for same-respondent panel data; see [setup-blocks §8](setup-blocks.md#config)).
+Correction follows `SIG_CORRECTION` (default `none`). A banner
 column below the table's `MIN_BASE` is excluded from testing. The letters render on
 their own row beneath each stub's count and percentage rows; multiple letters are
 separated (`B/C`).

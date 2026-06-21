@@ -15,10 +15,11 @@ Script-wide execution settings. All clauses are optional.
 | `OUTPUT` | `text` \| `excel` | Default output format. `text` (default) = plain-text tables; `excel` = workbook. |
 | `SIG_CONFIDENCE` | `<pct> [, <pct>]` | Confidence level(s) in **percent** (not an alpha). One value (default `95`) = a single level. Two values (e.g. `99, 95`) = **dual** testing: letters significant at the higher level are UPPERCASE, those significant only at the lower level are lowercase. Each value must be `50 < pct < 100`. |
 | `SIG_CORRECTION` | `none` \| `bonferroni` | Multiple-comparison correction across the column pairs in a comparison group. Default `none` (each pair tested at the raw level, matching Quantum/MRDCL/SPSS). `bonferroni` divides alpha by the number of testable pairs. |
-| `SIG_COMPARE` | `segment` \| `all` \| `total` | Which columns are compared. Default `segment`. |
+| `SIG_COMPARE` | `segment` \| `all` \| `total` \| `prior` | Which columns are compared. Default `segment`. |
 | `MISSING_TREATMENT` | `exclude` \| `show` | Whether missing-coded respondents are excluded. Default `exclude`. |
 | `SUPPRESS_STACKED_SIG` | `true` \| `false` | When `true`, drops significance flags from stacked (`LEVEL`) tables, where repeated exposures are not independent. Default `false` (a non-fatal advisory is emitted when sig is kept on a `LEVEL` table). |
 | `SUPPRESS_GRID_SIG` | `true` \| `false` | When `true`, drops significance flags from `GRID` tables, whose columns are the same respondents (paired). Default `false` (sig runs; a non-fatal advisory notes the paired approximation). |
+| `SUPPRESS_WAVE_SIG` | `true` \| `false` | When `true`, drops significance flags while `SIG_COMPARE prior` is in effect (use for paired/panel data where the independent-sample prior test does not apply). Default `false` (sig runs; a non-fatal advisory notes the independent-sample assumption). |
 | `DEFAULT_STATS` | `stat [, stat …]` | Fallback stats if no `FORMAT STATS` exists. Prefer `FORMAT STATS` ([§9](#format)). |
 
 **`SIG_COMPARE` values**
@@ -27,6 +28,42 @@ Script-wide execution settings. All clauses are optional.
 - `all` — round-robin across all non-Total columns (cross-segment).
 - `total` — each non-Total column against the Total column (Total is lettered and
   participates; needs a Total column shown).
+- `prior` — **wave-on-wave**: each column against the one immediately to its left
+  (its *prior* column), within each innermost banner segment. The two columns are
+  treated as **independent samples** (correct for a fresh-sample tracker;
+  approximate for a same-respondent panel — see the worked example).
+
+**Worked example — `SIG_COMPARE prior` (wave-on-wave)**
+
+A four-wave awareness banner, testing each wave against the previous one:
+
+```mrs
+CONFIG
+  SIG_CONFIDENCE 95
+  SIG_COMPARE    prior
+END CONFIG
+
+TABLE "Brand awareness by wave"
+  STUBS  $brand
+  BANNER $wave            -- Q1 (A)  Q2 (B)  Q3 (C)  Q4 (D)
+  STATS  col_pct, n, sig
+END TABLE
+```
+
+Columns are lettered `A B C D` after the Total. `prior` tests only the **adjacent**
+pairs A↔B, B↔C, C↔D — never A↔C or A↔D. Letters keep their usual "higher than"
+meaning, so for a brand whose awareness was 40 % → 55 % → 58 % → 40 %:
+
+| Wave | Cell | Reading |
+|------|------|---------|
+| Q2 (B) | `55% ` **A** | up significantly **vs Q1** (the rise is flagged on the later wave) |
+| Q3 (C) | `58% ` | vs Q2 not significant — no adjacent letter |
+| Q3 (C) | `58% ` **D** | Q3 is significantly higher than Q4 — i.e. awareness **fell into Q4** (a fall is flagged on the higher/earlier column) |
+
+Because each wave is a fresh, independent sample the test is exact. If the waves are
+the **same panel respondents**, read the flags as approximate (the within-respondent
+correlation is ignored) — a non-fatal advisory says so, and `SUPPRESS_WAVE_SIG true`
+drops the flags.
 
 ```mrs
 CONFIG

@@ -24,6 +24,7 @@ SOURCE  %RESPID  APPEND  JOIN  CONFIG  FORMAT  VARIABLE
 DERIVE  STACK  EDIT  RECODE  KEEP ROWS  DROP ROWS  COMPUTE  RIM
 BANNER (named)  TABLE  SCOPE  EXPORT DATA
 ADDTAB  BANKED_TABLE  MANIP                       (cross-table ops — reference stored tables by NAME)
+AUTOTAB … END AUTOTAB                             (one banner table per VARS()-selected codebook variable)
 EXPECT                                            (routing assertions / data QC)
 ```
 
@@ -31,7 +32,7 @@ EXPECT                                            (routing assertions / data QC)
 
 ```text
 END CONFIG   END FORMAT   END VARIABLE   END DERIVE   END STACK
-END TABLE    END BANNER   END DEFINE   END RIM   ENDNET   ENDHEADING   ENDSCOPE
+END TABLE    END BANNER   END DEFINE   END RIM   END AUTOTAB   ENDNET   ENDHEADING   ENDSCOPE
 ```
 
 ### Clauses by block
@@ -40,9 +41,9 @@ END TABLE    END BANNER   END DEFINE   END RIM   ENDNET   ENDHEADING   ENDSCOPE
 |---------|---------|
 | `SOURCE` | `AS`  `DATA`  `CODEBOOK`  `SCHEMA`  (+ optional name) |
 | `JOIN` | `WITH`  `ON`  `%RESPID`  `TYPE` (left \| inner) |
-| `CONFIG` | `OUTPUT`  `SIG_CONFIDENCE`  `SIG_CORRECTION`  `SIG_COMPARE`  `MISSING_TREATMENT`  `DEFAULT_STATS`  `SUPPRESS_STACKED_SIG`  `SUPPRESS_GRID_SIG` |
+| `CONFIG` | `OUTPUT`  `SIG_CONFIDENCE`  `SIG_CORRECTION`  `SIG_COMPARE`  `MISSING_TREATMENT`  `DEFAULT_STATS`  `SUPPRESS_STACKED_SIG`  `SUPPRESS_GRID_SIG`  `SUPPRESS_WAVE_SIG` |
 | `FORMAT` / `TABLE` shared | `STATS`  `BANNER`  `WEIGHT`  `BASE_LABEL`  `FOOTER`  `THOUSANDS_SEPARATOR`  `MIN_BASE`  `CONFIDENTIAL`  `BLANK_SUPPRESS`  `SUPPRESS_EMPTY`  `AUTONUMBER`  `RANKING`  `SORT` (`ASC`/`DESC`/`ON`/`TOTAL`)  `SHOW_TOTAL`  `MAX_COL_WIDTH`  `DECIMALS`  `PCT_DECIMALS`  `COUNT_DECIMALS`  `MEAN_DECIMALS`  `PCT_SIGN` |
-| `TABLE`-only | `STUBS`  `DISTRIBUTION`  `ADD`  `SECTION LABEL`  `LEVEL`  `BASE`  `FILTER`  `SHEET`  `STATS_ONLY`  `NAME` |
+| `TABLE`-only | `STUBS`  `DISTRIBUTION`  `ADD`  `SECTION LABEL`  `LEVEL`  `BASE`  `FILTER`  `SHEET`  `STATS_ONLY`  `NAME`  `INDEX` (`ON $var=code` \| `ON TOTAL`) |
 | `GRID` table | `TYPE GRID`  `COLUMN`  `LABEL`  `FILTER`  `ANSWERED_BASE` |
 | `SUMMARY` table | `TYPE SUMMARY`  `STATEMENTS`  `MEASURE` (`TOP`/`BOTTOM`/`NET`/`mean`/`median`/…)  `SCALE` |
 | `VARIABLE` | `LABEL`  `TYPE`  `VALUE`  `MISSING`  `SCORE` |
@@ -57,6 +58,7 @@ END TABLE    END BANNER   END DEFINE   END RIM   ENDNET   ENDHEADING   ENDSCOPE
 | `ADDTAB` | `TITLE`  `NAME`  (source table names as quoted strings) |
 | `BANKED_TABLE` | `TITLE`  `NAME`  (stub-source name + source table names as quoted strings) |
 | `MANIP` | `+` `-` `*` `/` `INDEX` `SHARE` (op between two table names)  `ON` (`col_pct`/`n`/`weighted_n`/`mean`/`row_pct`)  `TITLE`  `NAME` |
+| `AUTOTAB` | `VARS(` `$var`  `TYPE t`  `LIKE "glob"`  `EXCLUDE $var`  `EXCLUDE LIKE "glob"` `)` + any `FORMAT`/`TABLE` shared clause — one banner table per selected codebook variable |
 | `EXPECT` | `WHERE`  `MISSING`  `ANSWERED`  (condition or sugar form) |
 
 ### Values
@@ -70,7 +72,27 @@ END TABLE    END BANNER   END DEFINE   END RIM   ENDNET   ENDHEADING   ENDSCOPE
 
 ---
 
-## 28. Common script patterns
+## 28. CLI commands at a glance
+
+| Command | What it does |
+|---------|-------------|
+| `mrscript run script.mrs` | Execute script, print text tables to stdout |
+| `mrscript export script.mrs out.csv` | Execute script, write CSV (or `.xlsx`) output |
+| `mrscript export-data script.mrs out.sav` | Execute script, write transformed dataset |
+| `mrscript build script.mrst` | Transpile `.mrst` authoring file to `.mrs` |
+| `mrscript health script.mrs` | Run data-quality checks, print report |
+| `mrscript diff old.sav new.sav --key $id` | Compare two data deliveries |
+| `mrscript reconcile script.mrs plan.xlsx` | Validate script against a client tab plan |
+| `mrscript assist "tab q1 by gender" --data survey.sav` | Generate a TABLE/DERIVE block from plain English |
+| `mrscript suggest $q1 --data survey.sav` | Suggest NET/recode groupings from value labels as a DERIVE |
+| `mrscript provenance script.mrs --table 1 --row 5 --col "$gender=1"` | Drill one table cell to its contributing respondent IDs |
+| `mrscript table-diff last_week/ this_week/` | Diff two table runs: added/removed tables, structural changes, cell-value shifts |
+| `mrscript table-diff v1.mrs v2.mrs --data survey.sav --fail-on warn` | Diff two scripts side-by-side, exit 1 if any structural changes |
+| `mrscript project run project.yml` | Batch-run all scripts in a YAML project |
+
+---
+
+## 29. Common script patterns
 
 The full, copy-pasteable pattern library lives on the **[How-to recipes](../guide/patterns.md)**
 page — profile tables, significance crosstabs, T2B, computed indices, APPEND/JOIN,

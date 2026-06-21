@@ -344,6 +344,85 @@ last.
 > Out of scope (v1): sorting whole *sections* relative to each other (each section
 > sorts independently; section order is preserved) and sorting by a summary-row value.
 
+---
+
+### Index / profile tables — INDEX {#index}
+
+`INDEX` re-expresses every cell in a finished table as an **index vs a reference
+banner column** — 100 = parity, >100 over-indexes, <100 under-indexes. It is a
+post-tabulation clause (like `SORT`): the data are already tabulated, and `INDEX`
+simply rescales the result.
+
+```mrs
+INDEX [ON $var = code | ON TOTAL]
+```
+
+| Part | Default | Meaning |
+|------|---------|---------|
+| reference column | the **Total** column | divide every cell by this column's value |
+| `ON $var = code` | — | use the named banner column as reference |
+| `ON TOTAL` | — | explicit form of the default |
+
+**Cell math** is identical to `MANIP … INDEX`: `cell ÷ reference × 100`, None-safe
+and ÷0-safe (a zero-base reference yields a blank cell). The reference column itself
+always reads **100** (or blank when its value is 0). See also [§21 MANIP](#manip).
+
+**What changes / what stays the same:**
+
+| | Behaviour |
+|---|---|
+| Cells | Column % replaced by the index value (a plain number, no `%`) |
+| Base rows | Inherited unchanged — still show the real unindexed column bases |
+| NET rows | Indexed normally (NET value ÷ reference NET value × 100) |
+| HEADING rows | Blank — no value to index |
+| Summary rows (Mean / Std) | Dropped — index of a std dev is not meaningful |
+| Significance | Cleared — a ratio has no single base to test |
+| Stats shown | Rendered as `mean` (value-row path); use `MEAN_DECIMALS` or `DECIMALS` to control decimal places (recommend `DECIMALS 0` for whole-number indices) |
+
+**Restrictions:** `INDEX` requires a BANNER (at least the Total column). It is not
+supported on `TYPE GRID` or `TYPE SUMMARY` tables.
+
+**Worked example.** Profile satisfaction (`$q1`) by gender, indexed to the Total:
+
+```mrs
+TABLE 'Satisfaction profile — indexed'
+  STUBS   $q1
+  BANNER  $gender
+  STATS   col_pct, n
+  INDEX                    // reference = Total (default)
+  DECIMALS 0
+END TABLE
+```
+
+Suppose 60% of the Total, 50% of Males, and 80% of Females answer "Satisfied":
+
+```
+                     Total   Male (A)   Female (B)
+Satisfied              100        83         133
+```
+
+Male under-indexes (83 < 100); Female over-indexes (133 > 100). The Total column
+always reads 100 because it is the reference. Bases beneath the index rows are the
+real unindexed respondent counts.
+
+**Combine with SORT.** `SORT` runs before `INDEX`, so you can order rows by the
+pre-index rate and then re-express them as an index:
+
+```mrs
+TABLE 'Brand profile'
+  STUBS  $brand
+  BANNER $gender
+  STATS  col_pct, n
+  SORT   col_pct DESC            // order by Total % before indexing
+  INDEX  ON $gender = 2          // index Female column to Female base
+  DECIMALS 0
+END TABLE
+```
+
+**Using a non-Total reference.** `INDEX ON $gender = 2` uses the Female column as
+the reference base; the Female column itself reads 100, and all other columns are
+expressed relative to it.
+
 ### Total column {#total-column}
 
 When a `BANNER` is present, a leading **Total** column is prepended by default.
@@ -539,3 +618,112 @@ If `A25` reads `Brand X = 62%` in the North column and `A24` reads `55%`, the
 `AwDelta` table shows `Brand X = 7.0` there (a 7-point gain). A region where a
 brand fell shows a negative number. To index this year's rate against last year's
 instead (100 = no change), use `MANIP 'A25' INDEX 'A24'` → `62 ÷ 55 × 100 ≈ 112.7`.
+
+---
+
+## 21. Auto-tabulation — AUTOTAB / VARS() {#auto-tab}
+
+`AUTOTAB` generates **one banner table per variable** for all — or a filtered
+subset of — your dataset's **codebook** variables, so you never have to hand-write
+a `TABLE … END TABLE` block for every question in a survey.
+
+```mrs
+SOURCE "survey.sav"
+%RESPID = $respondent_id
+
+BANNER Demographics @age_group, $gender, $region END BANNER
+
+FORMAT
+    STATS  col_pct, n, sig
+    BANNER Demographics
+END FORMAT
+
+AUTOTAB VARS()          -- one crosstab per tabulatable codebook variable
+END AUTOTAB
+```
+
+That two-line block is the classic *"tab the whole survey by the standard banner"*
+job: each generated table is an ordinary banner table — `STUBS <variable>` plus the
+banner — titled from the variable's **label**, carrying the `STATS` / `BANNER` /
+`WEIGHT` from `FORMAT`. Because each one is a normal table, **significance,
+weighting, `SORT`, `INDEX`, `MIN_BASE`, decimals, `SHEET`, text + Excel rendering,
+and persistence all work unchanged** — `AUTOTAB` is purely an authoring shortcut
+that expands into N tables after the data is loaded.
+
+### What `VARS()` selects
+
+`VARS()` (empty) selects every **source variable** that is meaningfully
+crosstabbable:
+
+- **Included:** `single_punch`, `multi_binary`, and `numeric` source variables.
+- **Excluded:** `open_end` (free text), the `%RESPID` variable, and weight
+  variables.
+- **Order:** **codebook / source order** — the order the questions appear in the
+  data file, so the run reads top-to-bottom like the questionnaire.
+
+> Derived (`@`) variables are **not** auto-tabbed — `AUTOTAB` reads the *codebook*
+> (the source variables). Tab derived nets/recodes with explicit `TABLE` blocks.
+
+### Selecting a subset — the `VARS(...)` filter
+
+Put a comma-separated list of selector terms inside the parentheses:
+
+| Term | Meaning |
+|------|---------|
+| `$q1` | **explicit pick** — include this exact variable (sets listed order) |
+| `TYPE single_punch` | restrict to this variable type (repeat for more: `TYPE single_punch, TYPE numeric`) |
+| `LIKE "att_*"` | restrict to vars whose **name** matches this glob (case-insensitive) |
+| `EXCLUDE $q99` | drop this variable |
+| `EXCLUDE LIKE "*_oe"` | drop vars whose name matches this glob |
+
+They compose: the candidate set is your explicit picks (in listed order) — or the
+whole default universe if you give none — then `TYPE` and `LIKE` narrow it and
+`EXCLUDE` removes from it. An empty result is an error (loosen the filter).
+
+```mrs
+AUTOTAB VARS($q1, $q5, $q10)                 -- just these three, in this order
+    BANNER $gender
+    STATS  col_pct, n
+END AUTOTAB
+
+AUTOTAB VARS(TYPE single_punch, LIKE "att_*", EXCLUDE $att_open)
+    BANNER Demographics                       -- AUTOTAB clauses override FORMAT
+    SORT   col_pct DESC
+    SHEET  "Attitudes"
+END AUTOTAB
+```
+
+### Inheritance
+
+An `AUTOTAB` block accepts the shared (non-row-axis) `TABLE` clauses — `BANNER`
+(inline or named), `STATS` (incl. `STATS +`), `WEIGHT`, `FILTER`, `SHEET`, `SORT`,
+`INDEX`, `STATS_ONLY`, and the FORMAT directives (`MIN_BASE`, `DECIMALS`,
+`SHOW_TOTAL`, …). Every clause you put on the block applies to **all** generated
+tables; a clause you omit falls back to the global `FORMAT` block exactly as it
+would for a hand-written table with no such clause. So an `AUTOTAB` clause
+*overrides* `FORMAT` for the generated tables, and anything you leave off is
+inherited from `FORMAT`.
+
+The **row-axis / TYPE clauses** — `STUBS`, `DISTRIBUTION`, `ADD`, `COLUMN`,
+`TYPE GRID`, `TYPE SUMMARY`, `STATEMENTS`, `MEASURE`, `SCALE` — are **not** allowed
+inside `AUTOTAB` (the validator rejects them): `VARS()` *is* the row axis, and every
+generated table is a plain `STUBS <variable>` banner table. An `AUTOTAB` inside a
+`SCOPE` inherits that scope's filter and base label like any table.
+
+### Worked example
+
+With the data above (`gender`, `age`, `q1`, `region`, plus the `%RESPID`
+`respondent_id`), `AUTOTAB VARS()` produces **four** tables — *Gender*, *Age*,
+*Overall Satisfaction*, *Region* (`respondent_id` is the `%RESPID` and is skipped) —
+each crossed by the `Demographics` banner from `FORMAT`. To restrict the run to the
+single-punch attitude battery and drop the open-end follow-up:
+
+```mrs
+AUTOTAB VARS(TYPE single_punch, LIKE "att_*", EXCLUDE $att_other)
+    BANNER $gender
+    STATS  col_pct, n, sig
+END AUTOTAB
+```
+
+→ one significance-tested *att_1 … att_N* table per matching variable, all on the
+default sheet, in codebook order.

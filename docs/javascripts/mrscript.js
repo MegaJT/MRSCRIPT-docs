@@ -26,6 +26,8 @@
         "AXIS", "AT", "COLUMN", "SECTION", "STUBS", "DISTRIBUTION", "ADD",
         // cross-table operations
         "ADDTAB", "BANKED_TABLE", "MANIP", "INDEX", "SHARE", "NAME", "TITLE",
+        // auto-tabulation from codebook
+        "AUTOTAB", "VARS", "LIKE", "EXCLUDE",
         // table / variable clauses
         "STATS", "LEVEL", "BASE", "FILTER", "WEIGHT", "SHEET", "LABEL",
         "VALUE", "MISSING", "SCORE", "POSITIONS", "INTO", "ELSE", "SET",
@@ -37,7 +39,8 @@
         // CONFIG / FORMAT directives
         "OUTPUT", "SIG_CONFIDENCE", "SIG_CORRECTION", "SIG_COMPARE",
         "MISSING_TREATMENT", "DEFAULT_STATS", "SUPPRESS_STACKED_SIG",
-        "SUPPRESS_GRID_SIG", "BASE_LABEL", "FOOTER", "THOUSANDS_SEPARATOR",
+        "SUPPRESS_GRID_SIG", "SUPPRESS_WAVE_SIG", "BASE_LABEL", "FOOTER",
+        "THOUSANDS_SEPARATOR",
         "MIN_BASE", "MASK", "CONFIDENTIAL", "BLANK_SUPPRESS", "SUPPRESS_EMPTY",
         "AUTONUMBER", "RANKING", "SORT", "ASC", "DESC", "TOTAL",
         "MAX_COL_WIDTH", "PCT_SIGN", "PCT_DECIMALS",
