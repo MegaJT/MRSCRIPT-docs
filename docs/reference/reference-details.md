@@ -1,6 +1,6 @@
 # Part 8 · Reference details
 
-## 22. STATS values — complete list {#stats-values}
+## 28. STATS values — complete list {#stats-values}
 
 ### Distribution stats (per stub row)
 
@@ -21,10 +21,33 @@ follows `SIG_COMPARE` — `segment` (within each banner group), `all` (every col
 `total` (each vs the Total), or `prior` (**wave-on-wave**: each column vs the one
 immediately to its left, within each segment, treated as independent samples —
 approximate for same-respondent panel data; see [setup-blocks §8](setup-blocks.md#config)).
-Correction follows `SIG_CORRECTION` (default `none`). A banner
-column below the table's `MIN_BASE` is excluded from testing. The letters render on
-their own row beneath each stub's count and percentage rows; multiple letters are
-separated (`B/C`).
+A banner column below the table's `MIN_BASE` is excluded from testing. The letters
+render on their own row beneath each stub's count and percentage rows; multiple letters
+are separated (`B/C`).
+
+#### Significance strategy {#sig-strategy}
+
+Four `CONFIG` knobs tune *how* the test is run (all default to the status quo except
+`SIG_MEAN_TEST`, whose default is the more honest exact-t). Full table:
+[setup-blocks §8](setup-blocks.md#config).
+
+| `CONFIG` knob | Values (default **bold**) | What it changes |
+|---------------|---------------------------|-----------------|
+| `SIG_TAILS` | **`2`** \| `1` | Two-tailed vs one-tailed (directional). One-tailed halves the p-value (cut drops from `z₀.₀₂₅` to `z₀.₀₅`), keeping the "higher than" letter convention. Applies to **both** proportion and mean tests. |
+| `SIG_MEAN_TEST` | **`exact_t`** \| `normal` | The **Mean** row's critical value: the exact Student-t at the Welch–Satterthwaite degrees of freedom (`exact_t`, honest at small bases — e.g. df 2 needs `t = 4.30`, not `z = 1.96`), or the older normal approximation (`normal`). Proportions are always normal. |
+| `SIG_CORRECTION` | **`none`** \| `bonferroni` \| `bh` | Multiple-comparison correction over the m pairs in each comparison group. `none` = raw α; `bonferroni` = α/m (family-wise error rate); `bh` = Benjamini–Hochberg step-up (false-discovery rate — more powerful than Bonferroni when several differences are real). |
+| `SIG_DEFF` | **`1.0`** \| `≥ 1.0` | Design effect — divides the effective bases by DEFF before the statistic (SE inflates by √DEFF). A rough global correction for clustered/complex samples. |
+
+**Multiple comparisons in plain terms.** When a table compares many column pairs, some
+will look "significant" by chance. `bonferroni` is strict — it guarantees a low chance
+of *any* false positive, but kills real findings when there are many columns. `bh`
+(Benjamini–Hochberg) instead caps the expected *proportion of mistakes among the cells
+you flagged* — so with several genuine differences it keeps far more power than
+Bonferroni while still controlling error. Both run **per comparison group** (the same
+cliques `SIG_COMPARE` defines), so the family size is the group's pair count, never the
+whole table.
+
+The text-renderer legend names whichever strategy is active beneath the table.
 
 ### Summary stats (appended below the distribution; numeric/scored variables)
 
@@ -39,6 +62,7 @@ separated (`B/C`).
 | `sum` | Σx. |
 | `sum_of_squares` | Σx². |
 | `error_variance` | Σx² / n (or weighted equivalent). |
+| `nps` | Net Promoter Score (see below). |
 
 !!! note "Notes"
 
@@ -49,9 +73,59 @@ separated (`B/C`).
     - Numeric variables use their raw values.
     - All summary stats honour `WEIGHT` (weighted sums / Kish effective base).
 
+#### Net Promoter Score (`nps`) {#nps}
+
+`nps` adds a signed **NPS** row (−100…+100, no `%`) below the distribution, computed
+per banner column over that column's valid base:
+
+```text
+NPS = %promoters − %detractors          (passives stay in the base)
+```
+
+| Band | Default codes | Role |
+|------|---------------|------|
+| Promoters  | `9..10` | `+` |
+| Passives   | `7..8`  | in the base, contribute 0 |
+| Detractors | `0..6`  | `−` |
+
+- **Bands** default to the classic 0–10 NPS. Override per `TABLE` or in `FORMAT` with
+  `NPS PROMOTERS lo..hi DETRACTORS lo..hi` (passives are the codes in between; the base
+  spans `min(lo)..max(hi)`). The bands are **absolute code ranges**, independent of a
+  `SCALE` clause.
+- **Decimals** default to **0** (NPS is a whole signed number); `NPS_DECIMALS n`
+  overrides (falls back to the umbrella `DECIMALS`).
+- **Significance** (`STATS … sig`): NPS is a *difference of two proportions sharing one
+  base*, so its variance is the **multinomial** form
+  `Var(p̂_P − p̂_D) = [(p_P + p_D) − (p_P − p_D)²] / n` and two banner columns are
+  compared with a normal z on `s_j/n_j + s_k/n_k` (`s = (p_P + p_D) − d²`). It honours
+  `SIG_TAILS` / `SIG_CORRECTION` / `SIG_DEFF` / `MIN_BASE` / dual-CL and the
+  `SIG_COMPARE` topology. Overlapping columns (multi-response banner, or `SIG_COMPARE
+  total`) are **skipped** (like the mean test) — NPS letters appear under the
+  `segment` / `all` / `prior` topologies over disjoint banner columns.
+- Composes as a **`TYPE SUMMARY` measure** (`MEASURE nps "NPS"`) and wave-merges under
+  `ADDTAB` (counts add; NPS re-derives over the combined base).
+
+```mrs
+TABLE "Likelihood to recommend — NPS"
+    STUBS  $recommend                  -- the 0–10 question
+    BANNER $gender
+    STATS  col_pct, n, nps, sig
+END TABLE
+```
+
+```text
+                               Total    Male (A)  Female (B)
+... (0–10 distribution rows) ...
+  NPS                              0          40         -40
+                                               B
+```
+
+(Male's NPS +40 is significantly higher than Female's −40 at 95%, so the Male column
+carries Female's letter `B`.)
+
 ---
 
-## 23. Condition syntax {#conditions}
+## 29. Condition syntax {#conditions}
 
 Conditions appear after `WHERE` in `STUB`, `EDIT`, `KEEP`/`DROP ROWS`, `FILTER`, and
 `SCOPE`.
@@ -75,7 +149,7 @@ expressions like `$a + $b` are only available inside `COMPUTE`
 
 ---
 
-## 24. Base computation {#base}
+## 30. Base computation {#base}
 
 The base is the per-column denominator for column percentages:
 
@@ -100,7 +174,7 @@ de-duplicates rows.
 
 ---
 
-## 25. Missing values {#missing-values}
+## 31. Missing values {#missing-values}
 
 MRScript applies a strict **"the script is the authority"** principle — nothing in the
 data file is automatically treated as missing.
@@ -113,7 +187,7 @@ data file is automatically treated as missing.
 
 ---
 
-## 26. STATS modes — inherit / override / merge {#stats-modes}
+## 32. STATS modes — inherit / override / merge {#stats-modes}
 
 | Mode | Trigger | Behaviour |
 |------|---------|-----------|

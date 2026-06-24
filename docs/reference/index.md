@@ -77,6 +77,52 @@ This is the page you keep open while you script. If you are new, work through th
     `WEIGHT_CAP`, and `BASE_WEIGHT`. Produces a derived `@weight` column usable
     in any `TABLE WEIGHT`.
 
+-   **[12 · Tab-Plan Reconciliation](reconcile.md)**
+
+    `mrscript reconcile` — validate a script's produced tables against a client
+    tab-plan spreadsheet (CSV or xlsx). Coverage checks, conformance checks,
+    fuzzy title matching. Text / JSON / CSV reports; `--fail-on` for CI gates.
+
+-   **[13 · NL Assistant](assist.md)**
+
+    `mrscript assist` — turn a plain-English request into a validated
+    `TABLE` / `DERIVE` snippet. Anthropic (Haiku default) or any OpenAI-compatible
+    endpoint. Grounded with a variable catalog when `--data` is given.
+
+-   **[14 · Recode Suggester](suggest.md)**
+
+    `mrscript suggest $q1 --data survey.sav` — reads a variable's value labels and
+    proposes NET / recode groupings as a validated `DERIVE` block. Scales get
+    top/bottom-box NETs; nominals get thematic nets. Same provider as `assist`.
+
+-   **[15 · Cell Provenance](provenance.md)**
+
+    `mrscript provenance` — drill any produced table cell (stub row × banner column,
+    optionally a NET) back to the respondent IDs that contribute to it. Read over
+    the same masks the Tabulator already counted; no re-tabulation. Weighted IDs +
+    CSV worklist.
+
+-   **[16 · Table-Run Diff](table-diff.md)**
+
+    `mrscript table-diff` — compare two sets of produced tables table-by-table
+    and cell-by-cell: added / removed tables, structural changes, per-cell value
+    shifts beyond configurable thresholds. Works on saved `TableStore` directories
+    or `.mrs` scripts. Text / JSON / CSV; `--fail-on` for CI.
+
+-   **[17 · Audit Manifest](audit-manifest.md)**
+
+    `mrscript run --out-store DIR` — saves the `TableStore` and an `audit.json`
+    capturing script + data SHA-256, git context, runtime metadata, and effective
+    `CONFIG`. Pairs with `table-diff` to give a full provenance header showing
+    exactly which script version and data produced each run.
+
+-   **[18 · Open-End Coding](coding.md)**
+
+    `mrscript code` — turn free-text verbatim answers into a frame of themes and
+    write the result as a 0/1 dichotomy group (`{var}_{code}` columns). Manual
+    (analyst-fills) or AI-assisted via the same provider harness as `assist`. Output
+    round-trips via `CODEBOOK` so the themes tabulate like any `multi_binary` set.
+
 </div>
 
 ---

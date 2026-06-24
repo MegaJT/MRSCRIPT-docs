@@ -130,6 +130,53 @@ END DERIVE
 
 ---
 
+## 11b. SPREAD (multiple-category multi-response shorthand) {#spread}
+
+A multi-select question is stored one of two ways:
+
+| Layout | Storage | In Tablix |
+|---|---|---|
+| **Multiple-dichotomy** | one `0/1` column per item (`Brand_1=0`, `Brand_2=1`, …) | auto-detected as `multi_binary` — **no shorthand needed** |
+| **Multiple-category ("spread")** | N answer **slots**, each holding the **code** of one chosen item, unused slots null (`Brand_1=2`, `Brand_2=4`, `Brand_3=5`, `Brand_4=.`, …) | use **`SPREAD`** |
+
+`SPREAD` reassembles the spread/category slots into **one** multi-response `@variable` —
+a respondent is coded with code *k* iff **any** listed slot equals *k*.
+
+```mrscript
+SPREAD @name FROM $slot1, $slot2, ...  [LABEL "text"]
+```
+
+- **`FROM $slot1, $slot2, …`** — the answer-slot variables (any order; at least one,
+  usually all the slots of the question). Slots must be categorical / coded — an
+  `open_end` (text) slot is rejected.
+- **`LABEL "text"`** *(optional)* — the variable label; defaults to the bare `@name`.
+
+The result is an **ordinary multi-response variable** (exactly like a `DERIVE` list):
+it tabulates with `STUBS @name`, bases on the **union** (respondents coding ≥ 1 item),
+nets and crosses, takes overlap-aware significance, and exports as `{name}_{code}` 0/1
+dichotomy columns. Stub codes + labels come from the slots' **shared codeframe** (their
+value labels; declared-`MISSING` codes excluded). If the slots carry no value labels,
+the codes present in the data are used with bare-number labels — give them a
+`VARIABLE … VALUE` block (or a `CODEBOOK`) for names.
+
+```mrscript
+SOURCE 'survey.sav'
+%RESPID = $respondent_id
+
+SPREAD @known FROM $kb_1, $kb_2, $kb_3, $kb_4, $kb_5  LABEL "Brands known"
+
+TABLE 'Brand awareness'
+  STUBS @known   BANNER $gender   STATS col_pct, n
+END TABLE
+```
+
+!!! note "It's a pure shorthand"
+    `SPREAD` expands into the equivalent multi-response `DERIVE` (one `STUB` per code,
+    `WHERE $kb_1 = k OR $kb_2 = k OR …`). Writing that `DERIVE` by hand produces an
+    identical table — `SPREAD` just saves the typing.
+
+---
+
 ## 12. STACK (rotation / stacking / diary / nested loops) {#stack}
 
 `STACK` reshapes wide repeated-measures columns into a **long** frame where each row
@@ -487,7 +534,12 @@ Builds a new **numeric** `@column` from an arithmetic expression.
 | Unary minus | `-expr` |
 | Numbers | integer or decimal literals |
 | Variables | `$source` or `@derived` (referenced earlier) |
-| Functions | `round(x)`, `abs(x)`, `sqrt(x)`, `min(a, b, …)`, `max(a, b, …)` |
+| Functions | `round(x)`, `abs(x)`, `sqrt(x)`, `min(a, b, …)`, `max(a, b, …)`, `count(@listvar)` |
+
+`count(@listvar)` returns the **number of selected codes** in a multi-response
+(`DERIVE` / `SPREAD`) list variable for each respondent — an empty list counts `0`.
+It takes exactly one argument and it must be a `@`-list variable (a source `$var`
+or a sub-expression is rejected).
 
 ```mrs
 COMPUTE @bmi    = $weight / ($height * $height)
@@ -496,8 +548,23 @@ COMPUTE @net    = $revenue - $cost
 COMPUTE @capped = min(100, max(0, $raw))      // clamp to 0..100
 COMPUTE @idx    = round(($q1 + $q2) / 2)
 COMPUTE @dist   = sqrt($x * $x + $y * $y)
+COMPUTE @n_aware = count(@aware)              // #brands each respondent knows
 ```
 
 The result is a numeric variable — tabulate it with `DISTRIBUTION` or summary stats
 (`mean`, `std_dev`, …). Division by zero / nulls follow normal numeric rules
 (infinity / null); guard inputs if that matters.
+
+!!! tip "Average number of items picked in a multi-select"
+    Both storage layouts end at `STATS mean`:
+
+    ```mrs
+    // Multiple-dichotomy (0/1 per item) — sum the flags:
+    COMPUTE @n = $a1 + $a2 + $a3
+
+    // Multiple-category ("spread") — SPREAD into a list, then count it:
+    SPREAD @aware FROM $a1, $a2, $a3
+    COMPUTE @n = count(@aware)
+
+    TABLE 'Average items aware' STUBS @n STATS mean, n END TABLE
+    ```

@@ -16,9 +16,13 @@
       keyword: [
         // top-level statements / blocks
         "SOURCE", "APPEND", "JOIN", "WITH", "ON", "TYPE",
-        "CONFIG", "FORMAT", "VARIABLE", "DERIVE", "STACK",
+        "CONFIG", "FORMAT", "VARIABLE", "DERIVE", "STACK", "SPREAD",
         "EDIT", "RECODE", "COMPUTE", "BANNER", "TABLE", "SCOPE",
         "EXPORT", "DATA", "SCHEMA", "CODEBOOK",
+        // AGGREGATE — roll exposure/diary rows up to respondent level
+        // (the uppercase aggregate functions are keyworded; the lowercase
+        // STAT/COMPUTE `sum`/`mean`/`min`/`max` stay un-keyworded as before)
+        "AGGREGATE", "TO", "SUM", "COUNT", "MEAN", "MIN", "MAX", "FIRST", "LAST",
         // block closers
         "END", "ENDNET", "ENDHEADING", "ENDSCOPE",
         // structure
@@ -36,8 +40,11 @@
         "KEEP_IF_ZERO", "GRID", "DEFINE", "CALL",
         // summary / top-box battery tables
         "SUMMARY", "STATEMENTS", "MEASURE", "TOP", "BOTTOM", "SCALE",
+        // TURF analysis (lowercase metric/method values stay un-keyworded)
+        "TURF", "ITEMS", "SIZE", "REPORT", "METHOD",
         // CONFIG / FORMAT directives
         "OUTPUT", "SIG_CONFIDENCE", "SIG_CORRECTION", "SIG_COMPARE",
+        "SIG_TAILS", "SIG_MEAN_TEST", "SIG_DEFF",
         "MISSING_TREATMENT", "DEFAULT_STATS", "SUPPRESS_STACKED_SIG",
         "SUPPRESS_GRID_SIG", "SUPPRESS_WAVE_SIG", "BASE_LABEL", "FOOTER",
         "THOUSANDS_SEPARATOR",
@@ -45,6 +52,9 @@
         "AUTONUMBER", "RANKING", "SORT", "ASC", "DESC", "TOTAL",
         "MAX_COL_WIDTH", "PCT_SIGN", "PCT_DECIMALS",
         "COUNT_DECIMALS", "MEAN_DECIMALS",
+        // NPS (Net Promoter Score) band override + decimals (the `nps` STATS value
+        // is lowercase, so — like `mean`/`median` — it is not keyworded)
+        "NPS", "NPS_DECIMALS", "PROMOTERS", "DETRACTORS",
         // RIM weighting
         "RIM", "DIMENSION", "TARGETS", "MAX_ITERATIONS", "CONVERGENCE",
         "WEIGHT_CAP", "BASE_WEIGHT",
@@ -55,7 +65,7 @@
         "respondents",
       ].join(" "),
       literal: "true false NULL",
-      built_in: "round abs sqrt min max",
+      built_in: "round abs sqrt min max count",
     };
 
     return {

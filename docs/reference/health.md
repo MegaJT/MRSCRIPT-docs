@@ -10,7 +10,7 @@ Health checks are **report-only**: they never fix data (that is `EDIT` /
 
 ---
 
-## 22. mrscript health {#health-command}
+## 24. mrscript health {#health-command}
 
 ```powershell
 mrscript health script.mrs
@@ -34,7 +34,7 @@ same `--data` override as `run` and `export`. `.mrst` files are transpiled first
 
 ---
 
-## 23. Check catalogue {#checks}
+## 25. Check catalogue {#checks}
 
 Findings carry a severity:
 
@@ -140,7 +140,7 @@ parsed and evaluated only by `mrscript health` and never affect a `run` /
 
 ---
 
-## 24. Report output {#report-output}
+## 26. Report output {#report-output}
 
 ### Text summary (default, stdout)
 
@@ -200,7 +200,7 @@ respid,check_code,var,level,message
 
 ---
 
-## 25. Configuration {#health-config}
+## 27. Configuration {#health-config}
 
 Thresholds and opt-out are controlled via `HealthConfig` in Python (or
 `HealthRunner`) when calling the engine programmatically. The CLI uses defaults.

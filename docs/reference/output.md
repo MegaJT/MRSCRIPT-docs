@@ -1,6 +1,6 @@
 # Part 6 · Output
 
-## 20. EXPORT DATA (write the transformed dataset back out) {#export-data}
+## 22. EXPORT DATA (write the transformed dataset back out) {#export-data}
 
 ```mrs
 EXPORT DATA "out.file" [AS fmt] [SOURCE_ONLY] [CODEBOOK "book.json"]
@@ -16,13 +16,21 @@ point (place it after your transforms).
 | `SOURCE_ONLY` | Write only the original source columns; drop derived `@columns` (`DERIVE` / `COMPUTE` / `RECODE`-`EDIT … INTO`). |
 | `CODEBOOK "f"` | Also write a JSON codebook ([§5 format](data-input.md#source)). Pair with `csv`/`parquet`, which carry no embedded metadata. |
 
-!!! warning "Multi-response derived columns"
+!!! info "Multi-response derived columns — automatic dichotomy expansion"
 
-    A multi-response `DERIVE` column is stored as a list of codes, which `.sav` and
-    `.csv` cannot hold — exporting one to those formats is **refused** (write-back as
-    0/1 `Varname_[STUB]` dichotomy columns is planned, not yet built). Use
-    `SOURCE_ONLY` to drop derived columns, or export to `.parquet` (lists are native
-    there).
+    A multi-response `DERIVE` column (one `List[Int64]` of matching stub codes per
+    respondent) is automatically expanded into N separate `0`/`1` columns named
+    `{varname}_{code}` — one per leaf stub — before writing to `.sav` or `.csv`.
+    Example: `@brand` with stubs 1 "Colgate", 2 "Sensodyne", 3 "Oral-B" produces
+    columns `brand_1`, `brand_2`, `brand_3` in the output file.
+
+    A companion `CODEBOOK` records the dichotomies as individual `multi_binary`
+    variables with the stub label as the variable label.
+
+    **`.parquet`** exports the native `List[Int64]` column unchanged (lists are
+    lossless there — use parquet when you want the original multi-code structure).
+
+    **`SOURCE_ONLY`** drops the dichotomies along with all other derived columns.
 
 ```mrs
 EXPORT DATA 'clean.sav'                              // full, metadata-complete
@@ -30,12 +38,12 @@ EXPORT DATA 'clean.csv' CODEBOOK 'book.json'         // data + sidecar metadata
 EXPORT DATA 'original_only.sav' SOURCE_ONLY          // drop derived columns
 ```
 
-See also the `mrscript export-data` CLI command ([§21](#cli)), which does the same
+See also the `mrscript export-data` CLI command ([§23](#cli)), which does the same
 from the command line.
 
 ---
 
-## 21. Output formats and the CLI {#cli}
+## 23. Output formats and the CLI {#cli}
 
 Three output formats are available: **plain text** (to stdout), **tagged CSV**, and
 **styled Excel**. The CLI `export` command selects format by output-file extension
@@ -108,6 +116,39 @@ sentinel column.
 All tables are written into one CSV file surrounded by `FILE_START` / `FILE_END`
 sentinels. Encoding is UTF-8 with BOM (`utf-8-sig`) for Excel compatibility.
 
+### Interactive HTML viewer (`mrscript export … .html`) {#html}
+
+A single self-contained `.html` file — no CDN, no external assets, opens completely
+offline in any browser. Use it to share results with people who don't have Excel, or
+to browse tables in a browser mid-run.
+
+```sh
+mrscript export script.mrs report.html
+mrscript export script.mrs report.html --data survey.sav
+```
+
+The file includes:
+
+- **Left-nav table of contents** — all tables listed by number + title, grouped by
+  sheet. Collapses per group; active link highlighted as you scroll.
+- **Per-table row filter** — a text input above each table hides non-matching stub
+  rows (base rows, headings, and summary rows stay visible).
+- **Column sort** — click any banner header to reorder stub rows by that column's
+  col\_pct (or n for count-only tables). Click again to reverse.
+- **All table kinds** — banner tables (incl. nested group header bands and
+  significance rows), GRID, SUMMARY / TURF value-row tables, and cross-table outputs
+  (ADDTAB / BANKED / MANIP / INDEX).
+- **Same FormatSpec rules** as the text renderer: decimal resolution
+  (`PCT_DECIMALS` / `COUNT_DECIMALS` / `MEAN_DECIMALS`), `MIN_BASE` / `CONFIDENTIAL`
+  masking, `BLANK_SUPPRESS`, `STATS_ONLY`, and the blank-vs-zero distinction.
+
+Significance letters appear as `(A)` / `(B)` suffixes on banner headers and on a
+dedicated sig row below each stub's count / pct rows — matching the text renderer
+layout. When two confidence levels are active, UPPERCASE encodes the strict level.
+
+The `--theme` and `--layout` options only apply to `.xlsx`; the HTML viewer has a
+fixed single-column, single-file layout.
+
 ### Styled Excel (`mrscript export … .xlsx`)
 
 An openpyxl-generated workbook. All tables start with an **INDEX** sheet (with
@@ -129,6 +170,7 @@ mrscript run script.mrs --data data.sav       # Override the SOURCE file.
 
 mrscript export script.mrs report.csv         # Execute; write tagged CSV.
 mrscript export script.mrs report.xlsx        # Execute; write styled Excel.
+mrscript export script.mrs report.html        # Execute; write HTML viewer.
 mrscript export script.mrs report.xlsx --theme blue --layout single_sheet
 mrscript export script.mrs report.csv --data data.sav
 
@@ -150,4 +192,9 @@ mrscript health script.mrs --json r.json      # Also write a JSON report.
 mrscript health script.mrs --csv flagged.csv  # Also write a flagged-respondent CSV.
 mrscript health script.mrs --fail-on error    # Exit 2 when any errors are found.
                                               # (--fail-on warn: exit 2 on errors or warns)
+
+mrscript run   script.mrs --out-store DIR/    # Save TableStore + audit manifest alongside
+mrscript export script.mrs report.csv \       #   output. See §17: Audit Manifest for the
+    --out-store DIR/                          #   full out-store spec (audit.json schema,
+                                              #   git context, SHA-256 checksums).
 ```

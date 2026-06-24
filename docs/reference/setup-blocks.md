@@ -14,8 +14,11 @@ Script-wide execution settings. All clauses are optional.
 |--------|--------|---------|
 | `OUTPUT` | `text` \| `excel` | Default output format. `text` (default) = plain-text tables; `excel` = workbook. |
 | `SIG_CONFIDENCE` | `<pct> [, <pct>]` | Confidence level(s) in **percent** (not an alpha). One value (default `95`) = a single level. Two values (e.g. `99, 95`) = **dual** testing: letters significant at the higher level are UPPERCASE, those significant only at the lower level are lowercase. Each value must be `50 < pct < 100`. |
-| `SIG_CORRECTION` | `none` \| `bonferroni` | Multiple-comparison correction across the column pairs in a comparison group. Default `none` (each pair tested at the raw level, matching Quantum/MRDCL/SPSS). `bonferroni` divides alpha by the number of testable pairs. |
+| `SIG_CORRECTION` | `none` \| `bonferroni` \| `bh` | Multiple-comparison correction across the column pairs in a comparison group. Default `none` (each pair tested at the raw level, matching Quantum/MRDCL/SPSS). `bonferroni` divides alpha by the number of testable pairs (controls the *family-wise* error rate). `bh` is the **Benjamini–Hochberg** false-discovery-rate step-up (controls the expected share of false positives among the *flagged* pairs — more powerful than Bonferroni when several true differences exist). |
 | `SIG_COMPARE` | `segment` \| `all` \| `total` \| `prior` | Which columns are compared. Default `segment`. |
+| `SIG_TAILS` | `1` \| `2` | One-tailed (directional) or two-tailed test. Default `2`. `1` uses the one-tailed critical value (more powerful for a directional hypothesis); the "higher than" lettering is preserved. Applies to **both** the proportion z-test and the mean t-test. |
+| `SIG_MEAN_TEST` | `exact_t` \| `normal` | Critical value for the column-**mean** test. Default `exact_t` — the exact Student-t at the Welch–Satterthwaite degrees of freedom (honest even at very small bases). `normal` keeps the older normal (z) approximation (slightly anticonservative for tiny bases). Proportions are always normal. |
+| `SIG_DEFF` | `<float ≥ 1.0>` | Design effect — a rough complex-sample (clustered) correction. Default `1.0` (no adjustment). The effective bases handed to the z/t tests are divided by DEFF before the statistic is formed, so the standard error inflates by √DEFF. A single global knob (not per-column). |
 | `MISSING_TREATMENT` | `exclude` \| `show` | Whether missing-coded respondents are excluded. Default `exclude`. |
 | `SUPPRESS_STACKED_SIG` | `true` \| `false` | When `true`, drops significance flags from stacked (`LEVEL`) tables, where repeated exposures are not independent. Default `false` (a non-fatal advisory is emitted when sig is kept on a `LEVEL` table). |
 | `SUPPRESS_GRID_SIG` | `true` \| `false` | When `true`, drops significance flags from `GRID` tables, whose columns are the same respondents (paired). Default `false` (sig runs; a non-fatal advisory notes the paired approximation). |
@@ -74,6 +77,44 @@ CONFIG
 END CONFIG
 ```
 
+**Worked example — choosing a significance strategy**
+
+The four sig-strategy knobs compose freely. A typical complex-survey setup with a
+directional hypothesis, FDR control across many banner columns, the exact small-base
+mean test, and a design-effect correction:
+
+```mrs
+CONFIG
+  SIG_CONFIDENCE  95
+  SIG_TAILS       1          -- directional: only flag a column that is HIGHER
+  SIG_MEAN_TEST   exact_t    -- exact Student-t for Mean rows (the default)
+  SIG_CORRECTION  bh         -- Benjamini–Hochberg FDR across the column pairs
+  SIG_DEFF        1.5        -- clustered design: inflate the SE by √1.5
+END CONFIG
+
+TABLE "Agreement by region"
+  STUBS  $agree
+  BANNER $region        -- many columns → FDR (bh) keeps power without false positives
+  STATS  col_pct, n, mean, sig
+END TABLE
+```
+
+What each knob changes for the same data:
+
+- **`SIG_TAILS 1`** halves the p-value — a gap that is borderline two-tailed becomes
+  significant one-tailed (the cut drops from `z₀.₀₂₅ = 1.96` to `z₀.₀₅ = 1.645` at 95%).
+- **`SIG_MEAN_TEST exact_t`** is *stricter than `normal` at small bases*: a Mean gap
+  with only 2 valid respondents per column needs the t-critical 4.30 (df 2), not the
+  z-critical 1.96 — so the default no longer over-flags tiny cells.
+- **`SIG_CORRECTION bh`** sits between `none` (most flags) and `bonferroni` (fewest):
+  it rejects every pair whose p-value clears the Benjamini–Hochberg step-up line.
+- **`SIG_DEFF 1.5`** scales every test statistic by `1/√1.5 ≈ 0.816`, so fewer cells
+  clear the threshold — the rough correction for a clustered/multi-stage sample.
+
+The text-renderer legend names whichever strategy is active (e.g. *"One-tailed
+(directional) test."*, *"Benjamini–Hochberg FDR control applied (per comparison
+group)."*, *"Design effect DEFF = 1.5 applied (effective bases deflated)."*).
+
 ---
 
 ## 9. FORMAT (script-wide display defaults) {#format}
@@ -89,7 +130,7 @@ the table level ([§17](tables.md)). One `FORMAT` block per script.
 
 | Clause | Meaning |
 |--------|---------|
-| `STATS stat [, …]` | Default stats for all tables ([§22](reference-details.md#stats-values)). |
+| `STATS stat [, …]` | Default stats for all tables ([§28](reference-details.md#stats-values)). |
 | `BANNER var [, …]` | Default inline banner (column variables). |
 | `BANNER Name` | Default named banner (defined by [§18](tables.md#named-banner)). |
 | `WEIGHT $weight_var` | Default weight variable. |

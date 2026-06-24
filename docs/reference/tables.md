@@ -239,14 +239,85 @@ Mean
   Rating item 3                 3.17
 ```
 
+### TURF analysis — `TYPE TURF` {#turf}
+
+**TURF** (Total Unduplicated Reach & Frequency) answers *"which combination of
+items reaches the most people?"* — line-up / claims / SKU optimisation. Given a set
+of items, it finds the **best portfolio at each size** and reports its **reach**
+(the share who pick at least one item — the *unduplicated* union, not the sum of
+parts), the **incremental reach** each added item brings, and the average
+**frequency** (depth) of use.
+
+```mrs
+TABLE 'Flavour line — TURF' TYPE TURF
+  ITEMS  $flav_choc, $flav_van, $flav_straw, $flav_mint   -- the item set
+  SIZE   1..3                                             -- best portfolio at each size
+  REPORT reach, incremental, frequency                    -- which metric columns to show
+  METHOD auto                                             -- exact | greedy | auto (default auto)
+  FILTER $aware = 1
+  WEIGHT $wgt
+END TABLE
+```
+
+```
+                                       Reach %   Incremental   Frequency
+Base                                         5             5           5
+Chocolate                                 40.0          40.0        0.40
+Chocolate + Strawberry                    80.0          40.0        0.80
+Chocolate + Strawberry + Mint             80.0           0.0        1.10
+```
+
+Each row is the **best portfolio at that combination size** — the unduplicated reach
+curve. The columns are the metrics named in `REPORT` (values are shown without a `%`
+sign, like an `INDEX` / `MANIP` computed-value table; the header names the unit).
+
+#### `ITEMS` — three forms
+
+| `ITEMS` form | Items | "Chosen" means |
+|--------------|-------|----------------|
+| **≥ 2 variables** `$a, $b, $c` | one item **per variable** | `var = 1` (the multi-binary 0/1 convention) |
+| **one derived list** `@brands` | one item **per stub code** of a `DERIVE` multi-response var | the respondent's list contains that code |
+| **one single_punch** `$fav` | one item **per value code** | `var = code` (TURF over a single-choice question) |
+
+There must be **≥ 2 items**. Item labels come from the variable / value / stub labels.
+
+#### Clauses
+
+| Clause | Meaning |
+|--------|---------|
+| `ITEMS …` | The item set (required; see the three forms above). |
+| `SIZE k` / `SIZE lo..hi` | Combination size(s) to report. `SIZE 3` = the best 3-item portfolio; `SIZE 1..3` = the curve. Omitted ⇒ `1..N`. |
+| `REPORT reach[, incremental][, frequency]` | Which metric columns appear. Omitted ⇒ all three. |
+| `METHOD exact \| greedy \| auto` | Search strategy (default `auto`). |
+
+Reach is over the **table base** (everyone in scope), honouring `FILTER` / `SCOPE`
+and `WEIGHT` (weighted reach % weights both numerator and denominator). Incremental
+reach is `reach[k] − reach[k−1]` (always ≥ 0). Frequency is the mean number of
+portfolio items a base respondent chose.
+
+#### `METHOD` — exact vs greedy
+
+- **`exact`** enumerates every combination and picks the true maximum-reach
+  portfolio. Correct; cost grows as `Σ C(N,k)`.
+- **`greedy`** adds one item at a time (the item that most increases reach). Fast for
+  large item sets, occasionally sub-optimal.
+- **`auto`** (default) uses **exact** when the combination count is small (≤ 200 000),
+  else **greedy**. An explicit `METHOD exact` is refused past 2 000 000 combinations
+  (use `greedy`). Ties are broken deterministically (smallest item index), so output
+  is reproducible.
+
+> **v1 limitations.** No significance, no `LEVEL` (respondent-level only), and no
+> segment banner (one base per table) — a reach-by-segment cross is planned. `SORT`
+> and `INDEX` do not apply (a TURF table is banner-less).
+
 ### STATS
 
 ```mrs
 STATS [+] stat [, stat ...]
 ```
 
-Which statistic rows appear ([§22](reference-details.md#stats-values)). Three modes
-([§26](reference-details.md#stats-modes)): inherit (no clause), override (`STATS …`),
+Which statistic rows appear ([§28](reference-details.md#stats-values)). Three modes
+([§32](reference-details.md#stats-modes)): inherit (no clause), override (`STATS …`),
 merge (`STATS + …`).
 
 ### Other table clauses
